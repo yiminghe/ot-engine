@@ -1,0 +1,14 @@
+{
+  "name": "collaboration-engine-common",
+  "private": true,
+  "version": "0.0.0",
+  "description": "collaboration engine based on OT",
+  "author": "yiminghe <yiminghe@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:yiminghe/collaboration-engine.git"
+  },
+  "main": "src/index.ts",
+  "packageManager": "yarn@3.1.1"
+}
