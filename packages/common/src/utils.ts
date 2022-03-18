@@ -1,20 +1,15 @@
 import type { OTSide, OTType } from './core';
 
-export function transformType(op: any, prevOps: any[], otType: OTType) {
-  if ('transforms' in otType) {
-    return otType.transforms([op], prevOps, 'left');
-  } else if ('transform' in otType) {
-    return transform([op], prevOps, 'left', otType.transform);
-  }
-  throw new Error('lack transform in otType: ' + (otType as any).name);
+export function transformType(op: any[], prevOps: any[], otType: OTType) {
+  return transform(op, prevOps, 'left', otType.transform);
 }
 
-export function transform(
+function transform(
   op: any[],
   otherOp: any[],
   side: OTSide,
   transformOne: (opComponent: any, otherOpComponent: any, side: OTSide) => any,
-): [any, any] {
+): [any[], any[]] {
   if (!otherOp.length || !op.length) return [op, otherOp];
 
   const ops_00_01 = op[0];

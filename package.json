@@ -13,6 +13,7 @@
     "packages/*"
   ],
   "scripts": {
+    "check": "tsc --noEmit",
     "prettier": "prettier --write \"{packages,scripts}/**/*.{js,tsx,ts,jsx}\""
   },
   "devDependencies": {

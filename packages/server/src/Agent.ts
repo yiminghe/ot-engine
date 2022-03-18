@@ -1,20 +1,25 @@
 import type { Duplex } from 'stream';
 import type { Server } from './Server';
-import { uuid } from 'uuidv4';
-import type {
+import {
   OTType,
   ClientResponse,
   ClientRequest,
   CommitOpRequest,
+  transformType,
 } from 'collaboration-engine-common';
-import { transform } from 'collaboration-engine-common';
 
 export class Agent {
   timeId = 0;
 
+  opCount = 0;
+
   closed = false;
 
   docInfo: { docId: string; collection: string };
+
+  data: any;
+
+  version: number = 0;
 
   constructor(
     public server: Server,
@@ -46,13 +51,7 @@ export class Agent {
   };
 
   transform(op: any, prevOps: any[]) {
-    const { otType } = this;
-    if ('transforms' in otType) {
-      return otType.transforms([op], prevOps, 'left');
-    } else if ('transform' in otType) {
-      return transform([op], prevOps, 'left', otType.transform);
-    }
-    throw new Error('lack transform in otType: ' + (otType as any).name);
+    return transformType([op], prevOps, this.otType)[0][0];
   }
 
   send(message: ClientResponse) {
@@ -71,32 +70,40 @@ export class Agent {
     const { op } = request;
     if (ops.length) {
       const prevContent = ops.map((o) => o.content);
-      const content = this.transform(op.content, prevContent)[0];
-      const newOps = [];
+      const content = this.transform(op.content, prevContent);
       let baseVersion = ops[ops.length - 1].version;
-      for (const c of content) {
-        newOps.push({
-          version: ++baseVersion,
-          id: op.id,
-          content: c,
-        });
-      }
+      const newOp = {
+        ...op,
+        version: ++baseVersion,
+        content,
+      };
       this.send({
         ...responseInfo,
-        payload: [...ops, ...newOps],
+        ops: [...ops, newOp],
       });
       this.server.broadcast(this, {
         type: 'remoteOp',
-        payload: newOps,
+        ops: [newOp],
       });
+      this.data = this.otType.applyAndInvert(this.data, newOp, false)[0];
+      this.version = newOp.version;
     } else {
       this.send({
         ...responseInfo,
-        payload: [op],
+        ops: [op],
       });
       this.server.broadcast(this, {
         type: 'remoteOp',
-        payload: [op],
+        ops: [op],
+      });
+      this.data = this.otType.applyAndInvert(this.data, op, false)[0];
+      this.version = op.version;
+    }
+    if (++this.opCount % this.server.config.saveInterval === 0) {
+      this.server.db.saveSnapshot({
+        ...this.docInfo,
+        snapshot: this.otType.serialize(this.data),
+        version: this.version,
       });
     }
   }
@@ -113,7 +120,7 @@ export class Agent {
       });
       return;
     }
-    const { docInfo, server } = this;
+    const { docInfo, server, otType } = this;
     const { db } = server;
     if (request.type === 'getOps') {
       const responseInfo = {
@@ -126,7 +133,7 @@ export class Agent {
       });
       this.send({
         ...responseInfo,
-        payload: ops,
+        ops: ops,
       });
     } else if (request.type === 'getSnapshot') {
       const responseInfo = {
@@ -139,8 +146,18 @@ export class Agent {
       });
       this.send({
         ...responseInfo,
-        payload: snapshotAndOps,
+        snapshotAndOps,
       });
+      if (!this.data) {
+        const { snapshot, ops } = snapshotAndOps;
+        let data = this.otType.create(snapshot.content);
+        this.version = snapshot.version;
+        for (const p of ops) {
+          this.version = p.version;
+          data = otType.applyAndInvert(data, p.content, false)[0];
+        }
+        this.data = data;
+      }
     } else if (request.type === 'commitOp') {
       server.getRunnerByDocId(docInfo.docId).addTask({
         time: ++this.timeId,

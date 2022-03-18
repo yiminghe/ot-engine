@@ -36,22 +36,22 @@ interface BaseResponse {
 
 export interface GetSnapshotResponse<S, P> extends BaseResponse {
   type: 'getSnapshot';
-  payload?: SnapshotAndOps<S, P>;
+  snapshotAndOps?: SnapshotAndOps<S, P>;
 }
 
 export interface GetOpsResponse<P> extends BaseResponse {
   type: 'getOps';
-  payload?: Op<P>[];
+  ops?: Op<P>[];
 }
 
 export interface CommitOpResponse<P = any> extends BaseResponse {
   type: 'commitOp';
-  payload?: Op<P>[];
+  ops?: Op<P>[];
 }
 
 export interface RemoteOpResponse<P = any> {
   type: 'remoteOp';
-  payload: Op<P>[];
+  ops: Op<P>[];
 }
 
 export type ClientResponse<S = any, P = any> =
@@ -77,4 +77,11 @@ export interface CommitOpParams {
   collection: string;
   docId: string;
   op: Op;
+}
+
+export interface SaveSnapshotParams<S = any> {
+  collection: string;
+  docId: string;
+  snapshot: S;
+  version: number;
 }

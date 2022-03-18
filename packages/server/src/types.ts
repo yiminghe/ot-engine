@@ -5,6 +5,7 @@ import type {
   GetOpsParams,
   GetSnapshotParams,
   CommitOpParams,
+  SaveSnapshotParams,
 } from 'collaboration-engine-common';
 
 export interface DB {
@@ -13,7 +14,7 @@ export interface DB {
     params: GetSnapshotParams,
   ): Promise<SnapshotAndOps<S, P>>;
   commitOp(params: CommitOpParams): Promise<void>;
-  saveSnapshot(params: CommitOpParams): Promise<void>;
+  saveSnapshot(params: SaveSnapshotParams): Promise<void>;
 }
 
 export interface TimeTask extends Task<void> {

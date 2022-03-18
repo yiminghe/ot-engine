@@ -1,21 +1,19 @@
 export type OTSide = 'left' | 'right';
 
-export type OTType = {
+export type OTType<S = unknown, P = unknown> = {
   name: string;
-  applyAndInvert<D, P>(data: D, op: P, invert: boolean): [D, P];
-  compose?<P>(op: P, prevOp: P): P | undefined;
-} & (
-  | {
-      transform<P>(op: P, refOp: P, side: OTSide): [P[], P[]];
-    }
-  | {
-      transforms<P>(op: P[], refOp: P[], side: OTSide): [P[], P[]];
-    }
-);
+  create(data: any): S;
+  applyAndInvert(snapshot: S, op: P, invert: boolean): [S, P | undefined];
+  compose?(op: P, prevOp: P): P | undefined;
+  transform(op: P, refOp: P, side: OTSide): P;
+  serialize(s: S): any;
+  deserialize(data: any): S;
+};
 
 export interface Op<P = unknown> {
   version: number;
   id: string;
+  createdTime: number;
   content: P;
 }
 
