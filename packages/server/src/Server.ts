@@ -1,5 +1,5 @@
 import { DB, TimeTask } from './types';
-import type { OTType } from 'collaboration-engine-common';
+import type { OTType, RemoteOpResponse } from 'collaboration-engine-common';
 import { Agent } from './Agent';
 import type { Duplex } from 'stream';
 import ConcurrentRunner from 'concurrent-runner';
@@ -52,6 +52,18 @@ export class Server {
       agentsMap.set(docId, agents);
     }
     agents.add(agent);
+  }
+
+  broadcast(from: Agent, message: RemoteOpResponse) {
+    const { docId } = from.docInfo;
+    const agents = this.agentsMap.get(docId);
+    if (agents) {
+      for (const a of agents) {
+        if (a !== from) {
+          a.send(message);
+        }
+      }
+    }
   }
 
   deleteAgent(agent: Agent) {

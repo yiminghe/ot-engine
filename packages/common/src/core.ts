@@ -2,7 +2,7 @@ export type OTSide = 'left' | 'right';
 
 export type OTType = {
   name: string;
-  applyAndInvert<D, P>(data: D, op: P): [D, P];
+  applyAndInvert<D, P>(data: D, op: P, invert: boolean): [D, P];
   compose?<P>(op: P, prevOp: P): P | undefined;
 } & (
   | {
@@ -15,11 +15,12 @@ export type OTType = {
 
 export interface Op<P = unknown> {
   version: number;
+  id: string;
   content: P;
 }
 
 export interface Snapshot<P = unknown> {
-  v: number;
+  version: number;
   content: P;
 }
 

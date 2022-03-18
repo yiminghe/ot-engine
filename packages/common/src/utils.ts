@@ -1,4 +1,13 @@
-import type { OTSide } from './core';
+import type { OTSide, OTType } from './core';
+
+export function transformType(op: any, prevOps: any[], otType: OTType) {
+  if ('transforms' in otType) {
+    return otType.transforms([op], prevOps, 'left');
+  } else if ('transform' in otType) {
+    return transform([op], prevOps, 'left', otType.transform);
+  }
+  throw new Error('lack transform in otType: ' + (otType as any).name);
+}
 
 export function transform(
   op: any[],
@@ -38,4 +47,8 @@ export function transform(
     [...ops_n0_n1, ...ops_n1_nn],
     [...ops_0n_1n, ...ops_1n_nn],
   ];
+}
+
+export function last<T>(arr: T[]) {
+  return arr[arr.length - 1];
 }

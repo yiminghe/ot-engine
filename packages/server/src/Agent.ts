@@ -10,8 +10,6 @@ import type {
 import { transform } from 'collaboration-engine-common';
 
 export class Agent {
-  clientId = uuid();
-
   timeId = 0;
 
   closed = false;
@@ -74,21 +72,30 @@ export class Agent {
     if (ops.length) {
       const prevContent = ops.map((o) => o.content);
       const content = this.transform(op.content, prevContent)[0];
-      const newOps = [...ops];
+      const newOps = [];
       let baseVersion = ops[ops.length - 1].version;
       for (const c of content) {
         newOps.push({
           version: ++baseVersion,
+          id: op.id,
           content: c,
         });
       }
       this.send({
         ...responseInfo,
+        payload: [...ops, ...newOps],
+      });
+      this.server.broadcast(this, {
+        type: 'remoteOp',
         payload: newOps,
       });
     } else {
       this.send({
         ...responseInfo,
+        payload: [op],
+      });
+      this.server.broadcast(this, {
+        type: 'remoteOp',
         payload: [op],
       });
     }
@@ -132,10 +139,7 @@ export class Agent {
       });
       this.send({
         ...responseInfo,
-        payload: {
-          ...snapshotAndOps,
-          clientId: this.clientId,
-        },
+        payload: snapshotAndOps,
       });
     } else if (request.type === 'commitOp') {
       server.getRunnerByDocId(docInfo.docId).addTask({

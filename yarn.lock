@@ -69,6 +69,7 @@ __metadata:
     "@types/jest": 27.x
     "@types/node": ^17.0.21
     collaboration-engine-common: 0.0.0
+    ts-event-target: 0.1.x
     typescript: 4.x
   languageName: unknown
   linkType: soft
@@ -202,6 +203,13 @@ __metadata:
   dependencies:
     has-flag: ^4.0.0
   checksum: 3dda818de06ebbe5b9653e07842d9479f3555ebc77e9a0280caf5a14fb877ffee9ed57007c3b78f5a6324b8dbeec648d9e97a24e2ed9fdb81ddc69ea07100f4a
+  languageName: node
+  linkType: hard
+
+"ts-event-target@npm:0.1.x":
+  version: 0.1.4
+  resolution: "ts-event-target@npm:0.1.4::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fts-event-target%2F-%2Fts-event-target-0.1.4.tgz"
+  checksum: c43abe752b9ce95bc1089f5292a934be856aa1a6844ee5b98b78058af557da3eb565e81b324eb4e424c64cd9b45a9d1992c9fd6fc089266fc617696baee180dd
   languageName: node
   linkType: hard
 
