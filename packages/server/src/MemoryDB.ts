@@ -7,7 +7,7 @@ import {
   CommitOpParams,
   SaveSnapshotParams,
   Snapshot,
-} from 'collaboration-engine-common';
+} from 'ot-engine-common';
 
 export class DBDoc {
   ops: Map<number, Op> = new Map();

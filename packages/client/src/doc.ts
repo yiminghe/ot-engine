@@ -9,7 +9,7 @@ import {
   Presence,
   transformPresence,
   applyAndInvert,
-} from 'collaboration-engine-common';
+} from 'ot-engine-common';
 import { Event, EventTarget } from 'ts-event-target';
 import { uuid } from 'uuidv4';
 import { UndoItem, OpEvent, PresenceEvent, PresenceItem } from './types';
@@ -433,13 +433,16 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
     if (response.type === 'getSnapshot') {
       if (response.snapshotAndOps) {
         let { snapshot, ops } = response.snapshotAndOps;
-        snapshot.content = this.otType.create(snapshot.content);
+        let { content } = snapshot;
+        if (otType.create) {
+          content = otType.create(content);
+        }
         this.version = snapshot.version;
         for (const p of ops) {
           this.version = p.version;
-          applyAndInvert(snapshot.content, p.content, false, this.otType);
+          content = applyAndInvert(content, p.content, false, otType)[0];
         }
-        this.data = snapshot.content;
+        this.data = otType.deserialize?.(content) ?? content;
         return snapshot;
       }
       throw new Error(response.error);

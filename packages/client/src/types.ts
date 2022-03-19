@@ -8,7 +8,7 @@ import {
   transformType,
   last,
   Presence,
-} from 'collaboration-engine-common';
+} from 'ot-engine-common';
 
 export class OpEvent extends Event<'op'> {
   ops: any[] = [];

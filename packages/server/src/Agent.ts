@@ -10,7 +10,7 @@ import {
   last,
   RemoteOpResponse,
   applyAndInvert,
-} from 'collaboration-engine-common';
+} from 'ot-engine-common';
 import { uuid } from 'uuidv4';
 import { PubSubData } from './types';
 
@@ -144,7 +144,7 @@ export class Agent {
     if (newOp.version % server.config.saveInterval === 0) {
       server.db.saveSnapshot({
         ...docInfo,
-        snapshot: otType.serialize(this.data),
+        snapshot: otType.serialize?.(this.data) ?? this.data,
         version: this.version + 1,
       });
     }
@@ -186,13 +186,16 @@ export class Agent {
       });
       if (!this.data && snapshotAndOps) {
         const { snapshot, ops } = snapshotAndOps;
-        let data = this.otType.create(snapshot.content);
+        let { content } = snapshot;
+        if (otType.create) {
+          content = otType.create(content);
+        }
         this.version = snapshot.version;
         for (const p of ops) {
-          data = applyAndInvert(data, p.content, false, otType)[0];
+          content = applyAndInvert(content, p.content, false, otType)[0];
           this.version = p.version + 1;
         }
-        this.data = data;
+        this.data = otType.deserialize?.(content) ?? content;
       }
     } else if (request.type === 'commitOp') {
       this.handleCommitOpRequest(request);

@@ -6,7 +6,7 @@ import type {
   CommitOpParams,
   SaveSnapshotParams,
   Snapshot,
-} from 'collaboration-engine-common';
+} from 'ot-engine-common';
 
 export interface DB {
   getOps<P = unknown>(params: GetOpsParams): Promise<Op<P>[]>;

@@ -1,13 +1,13 @@
 {
-  "name": "collaboration-engine-client",
+  "name": "ot-engine-client",
   "private": true,
   "version": "0.0.0",
-  "description": "collaboration engine based on OT",
+  "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:yiminghe/collaboration-engine.git"
+    "url": "git@github.com:yiminghe/ot-engine.git"
   },
   "main": "src/index.ts",
   "devDependencies": {
@@ -16,7 +16,7 @@
     "typescript": "4.x"
   },
   "dependencies": {
-    "collaboration-engine-common": "0.0.0",
+    "ot-engine-common": "0.0.0",
     "ts-event-target": "0.1.x",
     "uuidv4": "6.x"
   },

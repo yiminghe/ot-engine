@@ -62,46 +62,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"collaboration-engine-client@workspace:packages/client":
-  version: 0.0.0-use.local
-  resolution: "collaboration-engine-client@workspace:packages/client"
-  dependencies:
-    "@types/jest": 27.x
-    "@types/node": ^17.0.21
-    collaboration-engine-common: 0.0.0
-    ts-event-target: 0.1.x
-    typescript: 4.x
-  languageName: unknown
-  linkType: soft
-
-"collaboration-engine-common@0.0.0, collaboration-engine-common@workspace:packages/common":
-  version: 0.0.0-use.local
-  resolution: "collaboration-engine-common@workspace:packages/common"
-  languageName: unknown
-  linkType: soft
-
-"collaboration-engine-server@workspace:packages/server":
-  version: 0.0.0-use.local
-  resolution: "collaboration-engine-server@workspace:packages/server"
-  dependencies:
-    "@types/jest": 27.x
-    "@types/node": ^17.0.21
-    collaboration-engine-common: 0.0.0
-    concurrent-runner: 0.2.x
-    typescript: 4.x
-    uuidv4: 6.x
-  languageName: unknown
-  linkType: soft
-
-"collaboration-engine@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "collaboration-engine@workspace:."
-  dependencies:
-    prettier: 2.x
-    typescript: 4.x
-  languageName: unknown
-  linkType: soft
-
 "color-convert@npm:^2.0.1":
   version: 2.0.1
   resolution: "color-convert@npm:2.0.1::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fcolor-convert%2F-%2Fcolor-convert-2.0.1.tgz"
@@ -115,13 +75,6 @@ __metadata:
   version: 1.1.4
   resolution: "color-name@npm:1.1.4::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fcolor-name%2F-%2Fcolor-name-1.1.4.tgz"
   checksum: b0445859521eb4021cd0fb0cc1a75cecf67fceecae89b63f62b201cca8d345baf8b952c966862a9d9a2632987d4f6581f0ec8d957dfacece86f0a7919316f610
-  languageName: node
-  linkType: hard
-
-"concurrent-runner@npm:0.2.x":
-  version: 0.2.0
-  resolution: "concurrent-runner@npm:0.2.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fconcurrent-runner%2F-%2Fconcurrent-runner-0.2.0.tgz"
-  checksum: c484e45a8e698db3a1c9907e438424206cc2f315db33eaa90d5823993d9f4dd6ef6f4a7207ffb8e0dde359cda73be6e24484006301df873767e79021c1f63850
   languageName: node
   linkType: hard
 
@@ -169,6 +122,47 @@ __metadata:
   checksum: bb2135fc48889ff3fe73888f6cc7168ddab9de28b51b3148f820c89fdfd2effdcad005f18be67d0b9be80eda208ad47290f62f03d0a33f848db2dd0273c8217a
   languageName: node
   linkType: hard
+
+"ot-engine-client@workspace:packages/client":
+  version: 0.0.0-use.local
+  resolution: "ot-engine-client@workspace:packages/client"
+  dependencies:
+    "@types/jest": 27.x
+    "@types/node": ^17.0.21
+    ot-engine-common: 0.0.0
+    ts-event-target: 0.1.x
+    typescript: 4.x
+    uuidv4: 6.x
+  languageName: unknown
+  linkType: soft
+
+"ot-engine-common@0.0.0, ot-engine-common@workspace:packages/common":
+  version: 0.0.0-use.local
+  resolution: "ot-engine-common@workspace:packages/common"
+  languageName: unknown
+  linkType: soft
+
+"ot-engine-server@workspace:packages/server":
+  version: 0.0.0-use.local
+  resolution: "ot-engine-server@workspace:packages/server"
+  dependencies:
+    "@types/jest": 27.x
+    "@types/node": ^17.0.21
+    ot-engine-common: 0.0.0
+    ts-event-target: 0.1.x
+    typescript: 4.x
+    uuidv4: 6.x
+  languageName: unknown
+  linkType: soft
+
+"ot-engine@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "ot-engine@workspace:."
+  dependencies:
+    prettier: 2.x
+    typescript: 4.x
+  languageName: unknown
+  linkType: soft
 
 "prettier@npm:2.x":
   version: 2.6.0

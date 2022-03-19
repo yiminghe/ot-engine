@@ -3,7 +3,7 @@ import type {
   OTType,
   PresenceIO,
   RemoteOpResponse,
-} from 'collaboration-engine-common';
+} from 'ot-engine-common';
 import { Agent } from './Agent';
 import type { Duplex } from 'stream';
 import { MemoryPubSub } from './MemoryPubSub';

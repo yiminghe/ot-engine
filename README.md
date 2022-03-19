@@ -1,6 +1,6 @@
-# collaboration-engine
+# ot-engine
 
-collaboration engine based on OT
+Operational transformation engine
 
 ## features
 
@@ -14,7 +14,7 @@ collaboration engine based on OT
 ```ts
 export type OTType<S = any, P = any> = {
   name: string;
-  create(data: any): S;
+  create?(data: any): S;
   applyAndInvert?(snapshot: S, op: P, invert: boolean): [S, P | undefined];
   apply?(snapshot: S, op: P): S;
   invert?(op: P): P;
@@ -22,7 +22,7 @@ export type OTType<S = any, P = any> = {
   compose?(op: P, prevOp: P): P | undefined;
   transform(op: P, refOp: P, side: OTSide): P;
   transformPresence?(presence: any, refOp: P): any;
-  serialize(s: S): any;
-  deserialize(data: any): S;
+  serialize?(s: S): any;
+  deserialize?(data: any): S;
 };
 ```
