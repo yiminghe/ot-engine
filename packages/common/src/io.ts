@@ -51,6 +51,7 @@ export interface CommitOpResponse<P = any> extends BaseResponse {
 
 export interface RemoteOpResponse<P = any> {
   type: 'remoteOp';
+  clientId: string;
   ops: Op<P>[];
 }
 

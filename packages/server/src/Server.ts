@@ -1,79 +1,64 @@
-import { DB, TimeTask } from './types';
+import type { DB, PubSub } from './types';
 import type { OTType, RemoteOpResponse } from 'collaboration-engine-common';
 import { Agent } from './Agent';
 import type { Duplex } from 'stream';
-import ConcurrentRunner from 'concurrent-runner';
+import { MemoryPubSub } from './MemoryPubSub';
+import { MemoryDB } from './MemoryDB';
 
 export interface ServerParams {
   saveInterval?: number;
   db?: DB;
+  pubSub?: PubSub;
 }
 
 type ServerConfig = Required<ServerParams>;
-
-function comparator(t: TimeTask, t2: TimeTask) {
-  return t.time === t2.time ? 0 : t.time > t2.time ? 1 : -1;
-}
 
 export class Server {
   config: ServerConfig;
 
   agentsMap: Map<string, Set<Agent>> = new Map();
 
-  runnerMap: Map<string, ConcurrentRunner<TimeTask>> = new Map();
-
   constructor(config: ServerParams) {
-    this.config = {
+    config = this.config = {
       saveInterval: 50,
       db: undefined!,
+      pubSub: undefined!,
       ...config,
     };
+    if (!config.pubSub) {
+      config.pubSub = new MemoryPubSub();
+    }
+    if (!config.db) {
+      config.db = new MemoryDB();
+    }
   }
 
-  getRunnerByDocId(docId: string) {
-    const { runnerMap } = this;
-    let runner = runnerMap.get(docId);
-    if (!runner) {
-      runner = new ConcurrentRunner({
-        concurrency: 1,
-        comparator,
-      });
-      runnerMap.set(docId, runner);
-    }
-    return runner;
+  get pubSub() {
+    return this.config.pubSub;
   }
 
   addAgent(agent: Agent) {
     const { agentsMap } = this;
-    const { docId } = agent.docInfo;
-    let agents = agentsMap.get(docId);
+    const { subscribeId } = agent;
+    let agents = agentsMap.get(subscribeId);
     if (!agents) {
       agents = new Set();
-      agentsMap.set(docId, agents);
+      agentsMap.set(subscribeId, agents);
     }
     agents.add(agent);
   }
 
   broadcast(from: Agent, message: RemoteOpResponse) {
-    const { docId } = from.docInfo;
-    const agents = this.agentsMap.get(docId);
-    if (agents) {
-      for (const a of agents) {
-        if (a !== from) {
-          a.send(message);
-        }
-      }
-    }
+    this.pubSub.publish(from.subscribeId, message);
   }
 
   deleteAgent(agent: Agent) {
-    const { agentsMap, runnerMap } = this;
-    const { docId } = agent.docInfo;
-    const agents = agentsMap.get(docId)!;
+    const { agentsMap } = this;
+    const { subscribeId } = agent;
+    const agents = agentsMap.get(subscribeId)!;
     agents.delete(agent);
     if (!agents.size) {
-      agentsMap.delete(docId);
-      runnerMap.delete(docId);
+      agentsMap.delete(subscribeId);
     }
   }
 

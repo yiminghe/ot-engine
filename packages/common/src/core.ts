@@ -1,6 +1,6 @@
 export type OTSide = 'left' | 'right';
 
-export type OTType<S = unknown, P = unknown> = {
+export type OTType<S = any, P = any> = {
   name: string;
   create(data: any): S;
   applyAndInvert(snapshot: S, op: P, invert: boolean): [S, P | undefined];
@@ -10,14 +10,14 @@ export type OTType<S = unknown, P = unknown> = {
   deserialize(data: any): S;
 };
 
-export interface Op<P = unknown> {
+export interface Op<P = any> {
   version: number;
   id: string;
   createdTime: number;
   content: P;
 }
 
-export interface Snapshot<P = unknown> {
+export interface Snapshot<P = any> {
   version: number;
   content: P;
 }

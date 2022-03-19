@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "collaboration-engine-common": "0.0.0",
-    "concurrent-runner": "0.2.x",
+    "ts-event-target": "0.1.x",
     "uuidv4": "6.x"
   },
   "packageManager": "yarn@3.1.1"

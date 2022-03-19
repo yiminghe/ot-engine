@@ -6,12 +6,15 @@ import {
   ClientRequest,
   CommitOpRequest,
   transformType,
+  Op,
+  last,
+  RemoteOpResponse,
 } from 'collaboration-engine-common';
+import { uuid } from 'uuidv4';
+import { PubSubData } from './types';
 
 export class Agent {
-  timeId = 0;
-
-  opCount = 0;
+  clientId = uuid();
 
   closed = false;
 
@@ -41,6 +44,25 @@ export class Agent {
     stream.on('end', this.clean);
   }
 
+  get subscribeId() {
+    return `${this.docInfo.collection}_${this.docInfo.docId}`;
+  }
+
+  subscribePubSub() {
+    this.server.pubSub.subscribe(this.subscribeId, this.onSubscribe);
+  }
+
+  onSubscribe = (e: PubSubData) => {
+    if (this.closed) {
+      return;
+    }
+    const data: RemoteOpResponse = e.data;
+    if (data.clientId === this.clientId) {
+      return;
+    }
+    this.send(data);
+  };
+
   close = () => {
     this.stream.end();
   };
@@ -48,6 +70,7 @@ export class Agent {
   clean = () => {
     this.closed = true;
     this.server.deleteAgent(this);
+    this.server.pubSub.unsubscribe(this.subscribeId, this.onSubscribe);
   };
 
   transform(op: any, prevOps: any[]) {
@@ -59,51 +82,67 @@ export class Agent {
   }
 
   async handleCommitOpRequest(request: CommitOpRequest) {
+    let ok = false;
+    let sendOps: Op[] = [];
     const responseInfo = {
       type: request.type,
       seq: request.seq,
     };
-    const ops = await this.server.db.getOps({
-      ...this.docInfo,
-      fromVersion: request.op.version,
-    });
-    const { op } = request;
-    if (ops.length) {
-      const prevContent = ops.map((o) => o.content);
-      const content = this.transform(op.content, prevContent);
-      let baseVersion = ops[ops.length - 1].version;
-      const newOp = {
-        ...op,
-        version: ++baseVersion,
-        content,
-      };
-      this.send({
-        ...responseInfo,
-        ops: [...ops, newOp],
+    const { server, otType, docInfo } = this;
+
+    while (!ok) {
+      const ops = await server.db.getOps({
+        ...docInfo,
+        fromVersion: request.op.version,
       });
-      this.server.broadcast(this, {
-        type: 'remoteOp',
-        ops: [newOp],
-      });
-      this.data = this.otType.applyAndInvert(this.data, newOp, false)[0];
-      this.version = newOp.version;
-    } else {
-      this.send({
-        ...responseInfo,
-        ops: [op],
-      });
-      this.server.broadcast(this, {
-        type: 'remoteOp',
-        ops: [op],
-      });
-      this.data = this.otType.applyAndInvert(this.data, op, false)[0];
-      this.version = op.version;
+
+      const { op } = request;
+      if (ops.length) {
+        const prevContent = ops.map((o) => o.content);
+        const content = this.transform(op.content, prevContent);
+        let baseVersion = ops[ops.length - 1].version;
+        const newOp = {
+          ...op,
+          version: ++baseVersion,
+          content,
+        };
+        sendOps = [...ops, newOp];
+      } else {
+        sendOps = [op];
+      }
+      const newOp = last(sendOps);
+      try {
+        await server.db.commitOp({
+          ...docInfo,
+          op: newOp,
+        });
+        ok = true;
+      } catch (e: unknown) {
+        ok = false;
+      }
     }
-    if (++this.opCount % this.server.config.saveInterval === 0) {
-      this.server.db.saveSnapshot({
-        ...this.docInfo,
-        snapshot: this.otType.serialize(this.data),
-        version: this.version,
+
+    const newOp = last(sendOps);
+    this.send({
+      ...responseInfo,
+      ops: sendOps,
+    });
+    server.broadcast(this, {
+      type: 'remoteOp',
+      clientId: this.clientId,
+      ops: [newOp],
+    });
+    for (const sp of sendOps) {
+      if (sp.version >= this.version) {
+        this.data = otType.applyAndInvert(this.data, sp, false)[0];
+      }
+    }
+    this.version = newOp.version;
+    if (newOp.version % server.config.saveInterval === 0) {
+      server.db.saveSnapshot({
+        ...docInfo,
+        snapshot: otType.serialize(this.data),
+        version: this.version + 1,
       });
     }
   }
@@ -148,25 +187,18 @@ export class Agent {
         ...responseInfo,
         snapshotAndOps,
       });
-      if (!this.data) {
+      if (!this.data && snapshotAndOps) {
         const { snapshot, ops } = snapshotAndOps;
         let data = this.otType.create(snapshot.content);
         this.version = snapshot.version;
         for (const p of ops) {
-          this.version = p.version;
           data = otType.applyAndInvert(data, p.content, false)[0];
+          this.version = p.version + 1;
         }
         this.data = data;
       }
     } else if (request.type === 'commitOp') {
-      server.getRunnerByDocId(docInfo.docId).addTask({
-        time: ++this.timeId,
-        run: () => {
-          return {
-            promise: this.handleCommitOpRequest(request),
-          };
-        },
-      });
+      this.handleCommitOpRequest(request);
     }
   };
 }
