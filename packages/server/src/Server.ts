@@ -1,5 +1,9 @@
 import type { DB, PubSub } from './types';
-import type { OTType, RemoteOpResponse } from 'collaboration-engine-common';
+import type {
+  OTType,
+  PresenceIO,
+  RemoteOpResponse,
+} from 'collaboration-engine-common';
 import { Agent } from './Agent';
 import type { Duplex } from 'stream';
 import { MemoryPubSub } from './MemoryPubSub';
@@ -48,7 +52,7 @@ export class Server {
     agents.add(agent);
   }
 
-  broadcast(from: Agent, message: RemoteOpResponse) {
+  broadcast(from: Agent, message: RemoteOpResponse | PresenceIO) {
     this.pubSub.publish(from.subscribeId, message);
   }
 
@@ -59,6 +63,16 @@ export class Server {
     agents.delete(agent);
     if (!agents.size) {
       agentsMap.delete(subscribeId);
+    }
+    if (agent.clientId) {
+      this.broadcast(agent, {
+        type: 'presence',
+        presence: {
+          version: 0,
+          content: null,
+          clientId: agent.clientId,
+        },
+      });
     }
   }
 

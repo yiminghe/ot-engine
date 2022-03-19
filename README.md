@@ -5,8 +5,9 @@ collaboration engine based on OT
 ## features
 
 - full typescript stack
-- one document one websocket
+- one document one websocket connection
 - support local undo/redo
+- support presence(collaborative cursors)
 
 ## ot type definition
 

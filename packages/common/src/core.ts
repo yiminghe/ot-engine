@@ -6,6 +6,7 @@ export type OTType<S = any, P = any> = {
   applyAndInvert(snapshot: S, op: P, invert: boolean): [S, P | undefined];
   compose?(op: P, prevOp: P): P | undefined;
   transform(op: P, refOp: P, side: OTSide): P;
+  transformPresence?(presence: any, refOp: P): any;
   serialize(s: S): any;
   deserialize(data: any): S;
 };
@@ -26,3 +27,9 @@ export type SnapshotAndOps<S, P> = {
   snapshot: Snapshot<S>;
   ops: Op<P>[];
 };
+
+export interface Presence {
+  version: number;
+  clientId: string;
+  content?: any;
+}

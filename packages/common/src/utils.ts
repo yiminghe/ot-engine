@@ -1,21 +1,35 @@
 import type { OTSide, OTType } from './core';
 
-export function transformType(op: any[], prevOps: any[], otType: OTType) {
-  return transform(op, prevOps, 'left', otType.transform);
+export function transformType(op: any[], refOps: any[], otType: OTType) {
+  return transform(op, refOps, 'left', otType.transform);
+}
+
+export function transformPresence(
+  presence: any,
+  refOps: any[],
+  otType: OTType,
+) {
+  const { transformPresence } = otType;
+  if (transformPresence) {
+    for (const op of refOps) {
+      presence = transformPresence(presence, op);
+    }
+  }
+  return presence;
 }
 
 function transform(
   op: any[],
-  otherOp: any[],
+  refOps: any[],
   side: OTSide,
   transformOne: (opComponent: any, otherOpComponent: any, side: OTSide) => any,
 ): [any[], any[]] {
-  if (!otherOp.length || !op.length) return [op, otherOp];
+  if (!refOps.length || !op.length) return [op, refOps];
 
   const ops_00_01 = op[0];
   const ops_01_0n = op.slice(1);
-  const ops_00_10 = otherOp[0];
-  const ops_10_n0 = otherOp.slice(1);
+  const ops_00_10 = refOps[0];
+  const ops_10_n0 = refOps.slice(1);
   const invertSide = side === 'right' ? 'left' : 'right';
   const ops_10_11 = transformOne(ops_00_01, ops_00_10, side);
   const ops_01_11 = transformOne(ops_00_10, ops_00_01, invertSide);

@@ -14,7 +14,9 @@ import { uuid } from 'uuidv4';
 import { PubSubData } from './types';
 
 export class Agent {
-  clientId = uuid();
+  agentId = uuid();
+
+  clientId = '';
 
   closed = false;
 
@@ -57,7 +59,7 @@ export class Agent {
       return;
     }
     const data: RemoteOpResponse = e.data;
-    if (data.clientId === this.clientId) {
+    if (data.agentId === this.agentId) {
       return;
     }
     this.send(data);
@@ -129,7 +131,7 @@ export class Agent {
     });
     server.broadcast(this, {
       type: 'remoteOp',
-      clientId: this.clientId,
+      agentId: this.agentId,
       ops: [newOp],
     });
     for (const sp of sendOps) {
@@ -149,19 +151,13 @@ export class Agent {
 
   handleMessage = async (request: ClientRequest) => {
     if (this.closed) {
-      const responseInfo = {
-        type: request.type,
-        seq: request.seq,
-      };
-      this.send({
-        ...responseInfo,
-        error: 'closed',
-      });
       return;
     }
     const { docInfo, server, otType } = this;
     const { db } = server;
-    if (request.type === 'getOps') {
+    if (request.type === 'presence') {
+      server.broadcast(this, request);
+    } else if (request.type === 'getOps') {
       const responseInfo = {
         type: request.type,
         seq: request.seq,

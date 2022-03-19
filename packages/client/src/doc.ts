@@ -6,26 +6,18 @@ import {
   CommitOpResponse,
   transformType,
   last,
+  Presence,
+  transformPresence,
 } from 'collaboration-engine-common';
 import { Event, EventTarget } from 'ts-event-target';
 import { uuid } from 'uuidv4';
+import { UndoItem, OpEvent, PresenceEvent, PresenceItem } from './types';
 
-export class OpEvent extends Event<'op'> {
-  ops: any[] = [];
-  source = false;
-  constructor() {
-    super('op');
-  }
-}
-
-interface UndoItem {
-  op: Op;
-  invert: any;
-}
-
-export class Doc extends EventTarget<[OpEvent]> {
+export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
   socket: WebSocket = undefined!;
   seq = 0;
+
+  clientId = uuid();
 
   data: any;
 
@@ -42,6 +34,10 @@ export class Doc extends EventTarget<[OpEvent]> {
   undoStack: UndoItem[] = [];
 
   redoStack: Op[] = [];
+
+  remotePresence: Map<string, PresenceItem> = new Map();
+
+  localPresenceGet?: () => any;
 
   constructor(socket: WebSocket, private otType: OTType) {
     super();
@@ -174,18 +170,71 @@ export class Doc extends EventTarget<[OpEvent]> {
     return promise;
   }
 
+  getOrCreatePresenceItem(clientId: string) {
+    let item = this.remotePresence.get(clientId);
+    if (!item) {
+      item = {};
+      this.remotePresence.set(clientId, item);
+    }
+    return item;
+  }
+
+  syncRemotePresences(ops: any[], onlyNormal = false) {
+    const changed = new Map();
+    for (const item of this.remotePresence.values()) {
+      const { pending, normal } = item;
+      if (!onlyNormal && pending) {
+        const p = this.syncPresence(pending);
+        if (p) {
+          item.normal = p;
+          item.pending = undefined;
+          changed.set(p.clientId, p.content);
+          continue;
+        }
+      }
+      if (normal) {
+        normal.content = transformPresence(normal.content, ops, this.otType);
+        changed.set(normal.clientId, normal.content);
+      }
+    }
+    if (changed.size) {
+      const event = new PresenceEvent();
+      event.changed = changed;
+      this.dispatchEvent(event);
+    }
+  }
+
   handleResponse(response: ClientResponse) {
     if (response.type === 'remoteOp') {
       if (!this.inflightOp) {
         const ops = response.ops;
         this.serverOps.push(...ops);
-        const opContent = ops.map((o) => o.content);
-        for (const o of opContent) {
+        const opContents = ops.map((o) => o.content);
+        for (const o of opContents) {
           this.apply(o, false);
         }
-        const opEvent = new OpEvent();
-        opEvent.ops = opContent;
-        this.dispatchEvent(opEvent);
+        this.fireOpEvent(opContents, false);
+        this.syncRemotePresences(opContents);
+      }
+    } else if (response.type === 'presence') {
+      const { presence } = response;
+      if (presence.content) {
+        const syncedPresence = this.syncPresence(presence);
+        const item = this.getOrCreatePresenceItem(presence.clientId);
+        if (syncedPresence) {
+          item.pending = undefined;
+          item.normal = syncedPresence;
+          const event = new PresenceEvent();
+          event.changed.set(presence.clientId, syncedPresence);
+          this.dispatchEvent(event);
+        } else {
+          item.pending = presence;
+        }
+      } else {
+        const event = new PresenceEvent();
+        this.remotePresence.delete(presence.clientId);
+        event.changed.set(presence.clientId, null);
+        this.dispatchEvent(event);
       }
     } else {
       const seq = response.seq;
@@ -194,6 +243,66 @@ export class Doc extends EventTarget<[OpEvent]> {
         resolve(response);
       }
     }
+  }
+
+  get allPendingOps() {
+    const p = [...this.pendingOps];
+    if (this.inflightOp) {
+      p.unshift(this.inflightOp);
+    }
+    return p;
+  }
+
+  submitPresence(get: () => any) {
+    this.localPresenceGet = get;
+    this._checkAndSubmitPresence();
+  }
+
+  _checkAndSubmitPresence() {
+    if (this.localPresenceGet && !this.inflightOp && !this.pendingOps.length) {
+      const presenceContent = this.localPresenceGet();
+      this.localPresenceGet = undefined;
+      if (presenceContent) {
+        this.send({
+          type: 'presence',
+          presence: {
+            version: this.version,
+            content: presenceContent,
+            clientId: this.clientId,
+          },
+        });
+      }
+    }
+  }
+
+  syncPresence(presence: Presence) {
+    if (presence.version > this.version) {
+      return;
+    }
+    let transformOps;
+    if (presence.version === this.version) {
+      transformOps = this.allPendingOps;
+    } else {
+      const { serverOps } = this;
+      const l = serverOps.length;
+      let i;
+      for (i = l - 1; i >= 0; i--) {
+        const op = serverOps[i];
+        if (op.version === presence.version) {
+          break;
+        }
+      }
+      if (i < 0) {
+        return;
+      }
+      transformOps = serverOps.slice(i).concat(this.allPendingOps);
+    }
+    presence.content = transformPresence(
+      presence.content!,
+      transformOps,
+      this.otType,
+    );
+    return presence;
   }
 
   pushToUndoStack(undoItem: UndoItem) {
@@ -236,6 +345,7 @@ export class Doc extends EventTarget<[OpEvent]> {
     }
 
     this.fireOpEvent(ops, true);
+    this.syncRemotePresences(ops, true);
     this.checkSend();
   }
 
@@ -261,12 +371,14 @@ export class Doc extends EventTarget<[OpEvent]> {
         this.inflightOp = undefined;
       }
     }
+    this._checkAndSubmitPresence();
   }
 
   handleCommitOpResponse(res: CommitOpResponse) {
     if (res.ops) {
       const { otType } = this;
       const inflightOp = this.inflightOp!;
+      this.inflightOp = undefined;
       const ops = res.ops!;
       this.serverOps.push(...ops);
       const my = ops.pop()!;
@@ -305,9 +417,8 @@ export class Doc extends EventTarget<[OpEvent]> {
             invert,
           });
         }
-        const opEvent = new OpEvent();
-        opEvent.ops = opForEvents;
-        this.dispatchEvent(opEvent);
+        this.fireOpEvent(opForEvents, false);
+        this.syncRemotePresences(opForEvents);
       }
     }
   }

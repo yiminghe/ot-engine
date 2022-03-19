@@ -1,9 +1,14 @@
-import type { Op, SnapshotAndOps } from './core';
+import type { Op, SnapshotAndOps, Presence } from './core';
 
 type DocInfoKeys = 'collection' | 'docId';
 
 interface BaseRequest {
   seq: number;
+}
+
+export interface PresenceIO {
+  type: 'presence';
+  presence: Presence;
 }
 
 export interface GetSnapshotRequest
@@ -25,6 +30,7 @@ export interface CommitOpRequest
 }
 
 export type ClientRequest =
+  | PresenceIO
   | GetSnapshotRequest
   | GetOpsRequest
   | CommitOpRequest;
@@ -51,11 +57,12 @@ export interface CommitOpResponse<P = any> extends BaseResponse {
 
 export interface RemoteOpResponse<P = any> {
   type: 'remoteOp';
-  clientId: string;
+  agentId: string;
   ops: Op<P>[];
 }
 
 export type ClientResponse<S = any, P = any> =
+  | PresenceIO
   | CommitOpResponse<P>
   | GetOpsResponse<P>
   | GetSnapshotResponse<S, P>
