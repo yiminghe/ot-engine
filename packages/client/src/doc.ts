@@ -8,6 +8,7 @@ import {
   last,
   Presence,
   transformPresence,
+  applyAndInvert,
 } from 'collaboration-engine-common';
 import { Event, EventTarget } from 'ts-event-target';
 import { uuid } from 'uuidv4';
@@ -117,7 +118,7 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
   }
 
   apply(op: any, invert: boolean) {
-    const ret = this.otType.applyAndInvert(this.data, op, invert);
+    const ret = applyAndInvert(this.data, op, invert, this.otType);
     this.data = ret[0];
     return ret[1];
   }
@@ -436,7 +437,7 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
         this.version = snapshot.version;
         for (const p of ops) {
           this.version = p.version;
-          otType.applyAndInvert(snapshot.content, p.content, false);
+          applyAndInvert(snapshot.content, p.content, false, this.otType);
         }
         this.data = snapshot.content;
         return snapshot;

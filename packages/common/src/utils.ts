@@ -4,6 +4,31 @@ export function transformType(op: any[], refOps: any[], otType: OTType) {
   return transform(op, refOps, 'left', otType.transform);
 }
 
+export function applyAndInvert(
+  snapshot: any,
+  op: any,
+  invert: boolean,
+  otType: OTType,
+) {
+  if (otType.applyAndInvert) {
+    return otType.applyAndInvert(snapshot, op, invert);
+  }
+  let ret = [];
+  if (invert) {
+    if (otType.invertWithDoc) {
+      ret[1] = otType.invertWithDoc(op, snapshot);
+    } else if (otType.invert) {
+      ret[1] = otType.invert(op);
+    }
+    throw new Error('lack invert/invertWithDoc in otType: ' + otType.name);
+  }
+  if (!otType.apply) {
+    throw new Error('lack apply in otType: ' + otType.name);
+  }
+  ret[0] = otType.apply(snapshot, op);
+  return ret;
+}
+
 export function transformPresence(
   presence: any,
   refOps: any[],

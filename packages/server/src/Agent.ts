@@ -9,6 +9,7 @@ import {
   Op,
   last,
   RemoteOpResponse,
+  applyAndInvert,
 } from 'collaboration-engine-common';
 import { uuid } from 'uuidv4';
 import { PubSubData } from './types';
@@ -136,7 +137,7 @@ export class Agent {
     });
     for (const sp of sendOps) {
       if (sp.version >= this.version) {
-        this.data = otType.applyAndInvert(this.data, sp, false)[0];
+        this.data = applyAndInvert(this.data, sp, false, otType)[0];
       }
     }
     this.version = newOp.version;
@@ -188,7 +189,7 @@ export class Agent {
         let data = this.otType.create(snapshot.content);
         this.version = snapshot.version;
         for (const p of ops) {
-          data = otType.applyAndInvert(data, p.content, false)[0];
+          data = applyAndInvert(data, p.content, false, otType)[0];
           this.version = p.version + 1;
         }
         this.data = data;
