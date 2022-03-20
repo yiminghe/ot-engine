@@ -5,7 +5,6 @@ import type {
   GetSnapshotParams,
   CommitOpParams,
   SaveSnapshotParams,
-  Snapshot,
 } from 'ot-engine-common';
 
 export interface DB {

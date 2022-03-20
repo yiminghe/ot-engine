@@ -8,7 +8,6 @@ import {
   SaveSnapshotParams,
   Snapshot,
 } from 'ot-engine-common';
-import { isObject } from 'util';
 
 export class DBDoc {
   ops: Map<number, Op> = new Map();
@@ -25,10 +24,10 @@ function getDocKey({ docId, collection }: DocInfo) {
 }
 export class MemoryDB implements DB {
   docs: Map<string, DBDoc> = new Map();
-  constructor() {}
+
   async getOps(params: GetOpsParams) {
     const doc = this.docs.get(getDocKey(params));
-    let ops: Op<any>[] = [];
+    const ops: Op[] = [];
     if (doc) {
       const toVersion = params.toVersion ?? Infinity;
       for (let i = params.fromVersion; i <= toVersion; i++) {

@@ -13,7 +13,7 @@ export function applyAndInvert(
   if (otType.applyAndInvert) {
     return otType.applyAndInvert(snapshot, op, invert);
   }
-  let ret = [];
+  const ret = [];
   if (invert) {
     if (otType.invertWithDoc) {
       ret[1] = otType.invertWithDoc(op, snapshot);

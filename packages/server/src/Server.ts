@@ -1,10 +1,5 @@
 import type { DB, PubSub } from './types';
-import type {
-  OTType,
-  PresenceIO,
-  RemoteOpResponse,
-  CommitOpParams,
-} from 'ot-engine-common';
+import type { OTType, PresenceIO, RemoteOpResponse } from 'ot-engine-common';
 import { Agent } from './Agent';
 import type { Duplex } from 'stream';
 import { MemoryPubSub } from './MemoryPubSub';
@@ -81,7 +76,7 @@ export class Server {
     return this.config.db;
   }
 
-  handleStream(
+  public handleStream(
     stream: Duplex,
     collection: string,
     docId: string,

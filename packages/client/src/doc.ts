@@ -35,15 +35,15 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
 
   clientId = uuid();
 
+  closed = false;
+
   data: any;
 
   version = 1;
 
-  callMap: Map<number, Function> = new Map();
+  callMap: Map<number, (arg: any) => void> = new Map();
 
   pendingOps: PendingOp[] = [];
-
-  serverOps: Op[] = [];
 
   inflightOp: PendingOp | undefined;
 
@@ -83,7 +83,7 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
     return ret[1];
   }
 
-  fireOpEvent(ops: any[], source: boolean = false) {
+  fireOpEvent(ops: any[], source = false) {
     const opEvent = new OpEvent();
     opEvent.ops = ops;
     opEvent.source = source;
@@ -92,11 +92,7 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
 
   bindToSocket(socket: WebSocket) {
     if (this.socket) {
-      this.socket.close();
-      this.socket.onmessage = null;
-      this.socket.onopen = null;
-      this.socket.onerror = null;
-      this.socket.onclose = null;
+      this.destryoy();
     }
 
     this.socket = socket;
@@ -113,6 +109,15 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
       if (!data) return;
       this.handleResponse(data as any);
     };
+  }
+
+  destryoy() {
+    const { socket } = this;
+    socket.close();
+    socket.onmessage = null;
+    socket.onopen = null;
+    socket.onerror = null;
+    socket.onclose = null;
   }
 
   send(request: ClientRequest) {
@@ -139,7 +144,11 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
           return;
         }
         if (this.version !== ops[0].version) {
-          const getOps = await this.fetchOps(this.version);
+          const getOps = (await this.send({
+            type: 'getOps',
+            fromVersion: this.version,
+            seq: 0,
+          })) as GetOpsResponse;
           if (!this.inflightOp && getOps.ops) {
             ops = getOps.ops;
           } else {
@@ -147,7 +156,6 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
           }
         }
         this.version = last(ops)!.version + 1;
-        this.serverOps.push(...ops);
         const opContents = ops.map((o) => o.content);
         for (const o of opContents) {
           this.apply(o, false);
@@ -247,24 +255,32 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
   }
 
   handleCommitOpResponse(res: CommitOpResponse) {
-    if (res.ops) {
+    if (res.ops?.length) {
       const { otType, pendingOps } = this;
       const inflightOp = this.inflightOp!;
       const localOps = this.allPendingOps;
       this.inflightOp = undefined;
       const opsFromServer = res.ops!;
-      this.serverOps.push(...opsFromServer);
-      const my = opsFromServer.pop()!;
-
+      let myIndex;
+      for (myIndex = 0; myIndex < opsFromServer.length; myIndex++) {
+        if (opsFromServer[myIndex].id === inflightOp.op.id) {
+          break;
+        }
+      }
+      const my = opsFromServer[myIndex];
+      if (!my) {
+        throw new Error('commitOp response error!');
+      }
+      const prevOps = opsFromServer.slice(0, myIndex);
+      const afterOps = opsFromServer.slice(myIndex + 1);
       const remoteOpEvent = new RemoteOpEvent();
-      remoteOpEvent.prevOps = opsFromServer;
+      remoteOpEvent.prevOps = prevOps;
+      remoteOpEvent.afterOps = afterOps;
       remoteOpEvent.myOp = my;
       this.dispatchEvent(remoteOpEvent);
 
-      this.version = my.version + 1;
-      if (opsFromServer.length) {
-        this.version = last(opsFromServer).version + 1;
-
+      this.version = last(opsFromServer).version + 1;
+      if (prevOps.length || afterOps.length) {
         const opForEvents: any[] = [];
 
         for (const pendingOp of localOps.concat().reverse()) {
@@ -273,40 +289,43 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
         }
 
         const localOpsCongent = localOps.map((o) => o.op.content);
+        let newPendingOps: any[] = localOpsCongent;
 
-        const newPendingOps: any[] = transformType(
-          localOpsCongent,
-          opsFromServer,
-          otType,
-        )[0];
+        if (prevOps.length) {
+          newPendingOps = transformType(newPendingOps, prevOps, otType)[0];
+        }
 
         newPendingOps.shift();
+
+        if (afterOps.length) {
+          newPendingOps = transformType(newPendingOps, afterOps, otType)[0];
+        }
+
         for (let i = 0; i < newPendingOps.length; i++) {
           pendingOps[i].op.content = newPendingOps[i].content;
         }
 
-        for (const o of opsFromServer.map((o) => o.content)) {
-          opForEvents.push(o);
-          this.apply(o, false);
-        }
         inflightOp.op.content = my.content;
         inflightOp.op.version = my.version;
-        for (const pendingOp of [inflightOp, ...pendingOps]) {
-          opForEvents.push(pendingOp.op.content);
-          pendingOp.invert.content = this.apply(pendingOp.op.content, true);
+
+        for (const o of opsFromServer) {
+          const { content, id } = o;
+          opForEvents.push(content);
+          if (id === inflightOp.op.id) {
+            inflightOp.invert.content = this.apply(content, true);
+          } else {
+            this.apply(content, false);
+          }
+        }
+
+        for (const pendingOp of pendingOps) {
+          const { content } = pendingOp.op;
+          opForEvents.push(content);
+          pendingOp.invert.content = this.apply(content, true);
         }
         this.fireOpEvent(opForEvents, false);
       }
     }
-  }
-
-  async fetchOps(fromVersion: number, toVersion?: number) {
-    return (await this.send({
-      type: 'getOps',
-      fromVersion,
-      toVersion,
-      seq: 0,
-    })) as GetOpsResponse;
   }
 
   public async fetch() {
@@ -317,7 +336,7 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
     });
     if (response.type === 'getSnapshot') {
       if (response.snapshotAndOps) {
-        let { snapshot, ops } = response.snapshotAndOps;
+        const { snapshot, ops } = response.snapshotAndOps;
         let { content } = snapshot;
         if (otType.create) {
           content = otType.create(content);

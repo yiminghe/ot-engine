@@ -1,14 +1,5 @@
-import { Event, EventTarget } from 'ts-event-target';
-import {
-  ClientResponse,
-  ClientRequest,
-  OTType,
-  Op,
-  CommitOpResponse,
-  transformType,
-  last,
-  Presence,
-} from 'ot-engine-common';
+import { Event } from 'ts-event-target';
+import { Op, Presence } from 'ot-engine-common';
 
 export class OpEvent extends Event<'op'> {
   ops: any[] = [];

@@ -16,7 +16,8 @@ export class UndoRedoStack {
   constructor(private doc: Doc) {}
 
   onRemoteOp({ prevOps, myOp, afterOps }: RemoteOpEvent) {
-    let { stack, nextAcceptedIndex } = this;
+    const { stack } = this;
+    let { nextAcceptedIndex } = this;
     if (nextAcceptedIndex && prevOps) {
       stack[nextAcceptedIndex - 1].afterOps.push(
         ...prevOps.map((o) => o.content),

@@ -2,13 +2,11 @@ import type { Duplex } from 'stream';
 import type { Server } from './Server';
 import {
   OTType,
-  CommitOpParams,
   ClientResponse,
   ClientRequest,
   CommitOpRequest,
   transformType,
   Op,
-  last,
   RemoteOpResponse,
   applyAndInvert,
 } from 'ot-engine-common';
@@ -90,7 +88,8 @@ export class Agent {
         toVersion: op.version,
       });
       if (snapshotAndOps) {
-        let { content, version } = snapshotAndOps.snapshot;
+        const { content } = snapshotAndOps.snapshot;
+        let { version } = snapshotAndOps.snapshot;
         let snapshot = otType.create?.(content) ?? content;
         for (const op of snapshotAndOps.ops) {
           version = op.version + 1;
@@ -113,7 +112,7 @@ export class Agent {
       type: request.type,
       seq: request.seq,
     };
-    const { server, otType, docInfo } = this;
+    const { server, docInfo } = this;
     let newOp: Op = undefined!;
     while (!ok) {
       const ops = await server.db.getOps({
@@ -123,19 +122,30 @@ export class Agent {
 
       const { op } = request;
       if (ops.length) {
-        const prevContent = ops.map((o) => o.content);
-        const content = this.transform(op.content, prevContent);
-        let baseVersion = ops[ops.length - 1].version;
-        const newOp = {
-          ...op,
-          version: ++baseVersion,
-          content,
-        };
-        sendOps = [...ops, newOp];
+        let i = 0;
+        for (i = 0; i < ops.length; i++) {
+          if (ops[i].id === op.id) {
+            newOp = ops[i];
+            break;
+          }
+        }
+        if (i === ops.length) {
+          const prevContent = ops.map((o) => o.content);
+          const content = this.transform(op.content, prevContent);
+          let baseVersion = ops[ops.length - 1].version;
+          newOp = {
+            ...op,
+            version: ++baseVersion,
+            content,
+          };
+          sendOps = [...ops, newOp];
+        } else {
+          sendOps = ops;
+        }
       } else {
+        newOp = op;
         sendOps = [op];
       }
-      newOp = last(sendOps)!;
       try {
         await server.db.commitOp({
           ...docInfo,
@@ -162,7 +172,7 @@ export class Agent {
     if (this.closed) {
       return;
     }
-    const { docInfo, server, otType } = this;
+    const { docInfo, server } = this;
     const { db } = server;
     if (request.type === 'presence') {
       server.broadcast(this, request);
