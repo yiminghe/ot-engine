@@ -18,6 +18,15 @@ export class OpEvent extends Event<'op'> {
   }
 }
 
+export class RemoteOpEvent extends Event<'remoteOp'> {
+  prevOps?: Op[];
+  myOp?: Op;
+  afterOps?: Op[];
+  constructor() {
+    super('remoteOp');
+  }
+}
+
 export class PresenceEvent extends Event<'presence'> {
   changed: Map<string, any | null> = new Map();
   constructor() {
@@ -33,4 +42,9 @@ export interface UndoItem {
 export interface PresenceItem {
   pending?: Presence;
   normal?: Presence;
+}
+
+export interface PendingOp {
+  op: Op;
+  invert: Op;
 }

@@ -45,7 +45,7 @@ export interface GetSnapshotResponse<S, P> extends BaseResponse {
   snapshotAndOps?: SnapshotAndOps<S, P>;
 }
 
-export interface GetOpsResponse<P> extends BaseResponse {
+export interface GetOpsResponse<P = any> extends BaseResponse {
   type: 'getOps';
   ops?: Op<P>[];
 }

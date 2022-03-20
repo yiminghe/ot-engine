@@ -83,6 +83,6 @@ function transform(
   ];
 }
 
-export function last<T>(arr: T[]) {
-  return arr[arr.length - 1];
+export function last<T>(arr: T[], index = 1) {
+  return arr[arr.length - index];
 }

@@ -25,7 +25,7 @@ export class Agent {
 
   data: any;
 
-  version: number = 0;
+  version: number = 1;
 
   constructor(
     public server: Server,
@@ -140,12 +140,12 @@ export class Agent {
         this.data = applyAndInvert(this.data, sp, false, otType)[0];
       }
     }
-    this.version = newOp.version;
+    this.version = newOp.version + 1;
     if (newOp.version % server.config.saveInterval === 0) {
       server.db.saveSnapshot({
         ...docInfo,
         snapshot: otType.serialize?.(this.data) ?? this.data,
-        version: this.version + 1,
+        version: this.version,
       });
     }
   }

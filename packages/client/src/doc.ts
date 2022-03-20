@@ -6,115 +6,75 @@ import {
   CommitOpResponse,
   transformType,
   last,
-  Presence,
-  transformPresence,
   applyAndInvert,
+  GetOpsResponse,
 } from 'ot-engine-common';
-import { Event, EventTarget } from 'ts-event-target';
+import { EventTarget } from 'ts-event-target';
 import { uuid } from 'uuidv4';
-import { UndoItem, OpEvent, PresenceEvent, PresenceItem } from './types';
+import { PresenceManager } from './PresenceManager';
+import { OpEvent, PendingOp, RemoteOpEvent, PresenceEvent } from './types';
+import { UndoManager } from './UndoManager';
 
-export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
-  socket: WebSocket = undefined!;
+interface DocConfig {
+  socket: WebSocket;
+  otType: OTType;
+  undoStackLimit?: number;
+  cacheServerOpsLimit?: number;
+}
+
+export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
+  socket: WebSocket;
+
+  config: Required<DocConfig>;
+
   seq = 0;
+
+  undoManager = new UndoManager(this);
+
+  presenceManager = new PresenceManager(this);
 
   clientId = uuid();
 
   data: any;
 
-  version = 0;
+  version = 1;
 
   callMap: Map<number, Function> = new Map();
 
-  pendingOps: Op[] = [];
+  pendingOps: PendingOp[] = [];
 
   serverOps: Op[] = [];
 
-  inflightOp: Op | undefined;
-
-  undoStack: UndoItem[] = [];
-
-  redoStack: Op[] = [];
-
-  remotePresence: Map<string, PresenceItem> = new Map();
+  inflightOp: PendingOp | undefined;
 
   localPresenceGet?: () => any;
 
-  constructor(socket: WebSocket, private otType: OTType) {
+  constructor(config: DocConfig) {
     super();
-    this.bindToSocket(socket);
+    this.config = {
+      ...config,
+      undoStackLimit: 30,
+      cacheServerOpsLimit: 500,
+    };
+    this.bindToSocket(config.socket);
+    this.socket = config.socket;
   }
 
-  canUndo() {
-    return !!this.undoStack.length;
+  get otType() {
+    return this.config.otType;
   }
 
-  canRedo() {
-    return !!this.redoStack.length;
+  public canUndo() {
+    return this.undoManager.canUndo();
   }
-
-  undo() {
-    if (!this.canUndo()) {
-      return;
-    }
-    const { undoStack, redoStack, serverOps } = this;
-    let { op, invert } = undoStack.pop()!;
-    redoStack.push(op);
-    const allPendingOps = [this.inflightOp, ...this.pendingOps].filter(
-      Boolean,
-    ) as Op[];
-
-    for (const q of allPendingOps) {
-      if (q.id === op.id) {
-        return this._submitOp([invert], false, false);
-      }
-    }
-    let i;
-    let l = serverOps.length - 1;
-    for (i = l; i >= 0; i--) {
-      const sop = serverOps[i];
-      if (op.version === sop.version) {
-        break;
-      }
-    }
-    if (i < 0) {
-      throw new Error('can not find server op for undo transform!');
-    }
-    const inverts = transformType(
-      [invert],
-      [...serverOps.slice(i + 1), ...allPendingOps].map((o) => o.content),
-      this.otType,
-    )[0];
-    return this._submitOp(inverts, false, false);
+  public canRedo() {
+    return this.undoManager.canRedo();
   }
-
-  redo() {
-    if (!this.canRedo()) {
-      return;
-    }
-    const op = this.redoStack.pop()!;
-    const allOps = [
-      ...this.serverOps,
-      ...(this.inflightOp ? [this.inflightOp] : []),
-      ...this.pendingOps,
-    ];
-    let i;
-    let l = allOps.length - 1;
-    for (i = l; i >= 0; i--) {
-      const o = allOps[i];
-      if (o.id === op.id) {
-        break;
-      }
-    }
-    if (i < 0) {
-      throw new Error('can not find server op for redo transform!');
-    }
-    const redos = transformType(
-      [op.content],
-      allOps.slice(i).map((o) => o.content),
-      this.otType,
-    )[0];
-    return this._submitOp(redos, false, false);
+  public undo() {
+    return this.undoManager.undo();
+  }
+  public redo() {
+    return this.undoManager.redo();
   }
 
   apply(op: any, invert: boolean) {
@@ -171,72 +131,34 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
     return promise;
   }
 
-  getOrCreatePresenceItem(clientId: string) {
-    let item = this.remotePresence.get(clientId);
-    if (!item) {
-      item = {};
-      this.remotePresence.set(clientId, item);
-    }
-    return item;
-  }
-
-  syncRemotePresences(ops: any[], onlyNormal = false) {
-    const changed = new Map();
-    for (const item of this.remotePresence.values()) {
-      const { pending, normal } = item;
-      if (!onlyNormal && pending) {
-        const p = this.syncPresence(pending);
-        if (p) {
-          item.normal = p;
-          item.pending = undefined;
-          changed.set(p.clientId, p.content);
-          continue;
-        }
-      }
-      if (normal) {
-        normal.content = transformPresence(normal.content, ops, this.otType);
-        changed.set(normal.clientId, normal.content);
-      }
-    }
-    if (changed.size) {
-      const event = new PresenceEvent();
-      event.changed = changed;
-      this.dispatchEvent(event);
-    }
-  }
-
-  handleResponse(response: ClientResponse) {
+  async handleResponse(response: ClientResponse) {
     if (response.type === 'remoteOp') {
       if (!this.inflightOp) {
-        const ops = response.ops;
+        let ops = response.ops;
+        if (this.version > last(ops)!.version) {
+          return;
+        }
+        if (this.version !== ops[0].version) {
+          const getOps = await this.fetchOps(this.version);
+          if (!this.inflightOp && getOps.ops) {
+            ops = getOps.ops;
+          } else {
+            return;
+          }
+        }
+        this.version = last(ops)!.version + 1;
         this.serverOps.push(...ops);
         const opContents = ops.map((o) => o.content);
         for (const o of opContents) {
           this.apply(o, false);
         }
+        const remoteOpEvent = new RemoteOpEvent();
+        remoteOpEvent.afterOps = ops;
+        this.dispatchEvent(remoteOpEvent);
         this.fireOpEvent(opContents, false);
-        this.syncRemotePresences(opContents);
       }
     } else if (response.type === 'presence') {
-      const { presence } = response;
-      if (presence.content) {
-        const syncedPresence = this.syncPresence(presence);
-        const item = this.getOrCreatePresenceItem(presence.clientId);
-        if (syncedPresence) {
-          item.pending = undefined;
-          item.normal = syncedPresence;
-          const event = new PresenceEvent();
-          event.changed.set(presence.clientId, syncedPresence);
-          this.dispatchEvent(event);
-        } else {
-          item.pending = presence;
-        }
-      } else {
-        const event = new PresenceEvent();
-        this.remotePresence.delete(presence.clientId);
-        event.changed.set(presence.clientId, null);
-        this.dispatchEvent(event);
-      }
+      this.presenceManager.onPresenceResponse(response);
     } else {
       const seq = response.seq;
       const resolve = this.callMap.get(seq);
@@ -254,12 +176,12 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
     return p;
   }
 
-  submitPresence(get: () => any) {
+  public submitPresence(get: () => any) {
     this.localPresenceGet = get;
-    this._checkAndSubmitPresence();
+    this.checkAndSubmitPresence();
   }
 
-  _checkAndSubmitPresence() {
+  checkAndSubmitPresence() {
     if (this.localPresenceGet && !this.inflightOp && !this.pendingOps.length) {
       const presenceContent = this.localPresenceGet();
       this.localPresenceGet = undefined;
@@ -276,82 +198,31 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
     }
   }
 
-  syncPresence(presence: Presence) {
-    if (presence.version > this.version) {
-      return;
-    }
-    let transformOps;
-    if (presence.version === this.version) {
-      transformOps = this.allPendingOps;
-    } else {
-      const { serverOps } = this;
-      const l = serverOps.length;
-      let i;
-      for (i = l - 1; i >= 0; i--) {
-        const op = serverOps[i];
-        if (op.version === presence.version) {
-          break;
-        }
-      }
-      if (i < 0) {
-        return;
-      }
-      transformOps = serverOps.slice(i).concat(this.allPendingOps);
-    }
-    presence.content = transformPresence(
-      presence.content!,
-      transformOps,
-      this.otType,
-    );
-    return presence;
-  }
-
-  pushToUndoStack(undoItem: UndoItem) {
-    const { undoStack, serverOps } = this;
-    undoStack.push(undoItem);
-    if (undoStack.length > 30) {
-      undoStack.shift();
-      const first = undoStack[0]!;
-      let i = 0;
-      for (i = 0; i < serverOps.length; i++) {
-        const op = serverOps[i];
-        if (op.id === first.op.id) {
-          break;
-        }
-      }
-      this.serverOps = serverOps.slice(i);
-    }
-  }
-
-  _submitOp(ops: any[], clearRedo = true, inverted = true) {
-    if (clearRedo) {
-      this.redoStack = [];
-    }
-
-    for (const op of ops) {
-      const op2: Op = {
-        id: uuid(),
-        createdTime: Date.now(),
-        version: 0,
-        content: op,
-      };
-      const invert = this.apply(op, inverted);
-      if (inverted) {
-        this.undoStack.push({
-          op: { ...op2 },
-          invert,
-        });
-      }
-      this.pendingOps.push(op2);
-    }
-
-    this.fireOpEvent(ops, true);
-    this.syncRemotePresences(ops, true);
+  submitPendingOp(op: PendingOp) {
+    this.pendingOps.push(op);
+    this.fireOpEvent([op.op], true);
     this.checkSend();
   }
 
-  submitOp(op: any) {
-    this._submitOp([op]);
+  public submitOp(opContent: any) {
+    const op: Op = {
+      id: uuid(),
+      createdTime: Date.now(),
+      version: 0,
+      content: opContent,
+    };
+    const invert = this.apply(opContent, true);
+    const pendingOp: PendingOp = {
+      op,
+      invert: {
+        version: 0,
+        createdTime: op.createdTime,
+        id: '-' + op.id,
+        content: invert,
+      },
+    };
+    this.undoManager.submitOp(pendingOp);
+    this.submitPendingOp(pendingOp);
   }
 
   async checkSend() {
@@ -359,9 +230,9 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
       return;
     }
     while (this.pendingOps.length) {
-      const op = (this.inflightOp =
-        this.inflightOp || this.pendingOps.shift()!);
-      op.version = this.version + 1;
+      const op = (this.inflightOp = this.inflightOp || this.pendingOps.shift()!)
+        .op;
+      op.version = this.version;
       const res = await this.send({
         type: 'commitOp',
         seq: 0,
@@ -372,59 +243,73 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
         this.inflightOp = undefined;
       }
     }
-    this._checkAndSubmitPresence();
+    this.checkAndSubmitPresence();
   }
 
   handleCommitOpResponse(res: CommitOpResponse) {
     if (res.ops) {
-      const { otType } = this;
+      const { otType, pendingOps } = this;
       const inflightOp = this.inflightOp!;
+      const localOps = this.allPendingOps;
       this.inflightOp = undefined;
-      const ops = res.ops!;
-      this.serverOps.push(...ops);
-      const my = ops.pop()!;
-      this.version = my.version;
-      if (ops.length) {
-        this.version = last(ops).version;
-        const localOps = [
-          inflightOp.content,
-          ...this.pendingOps.map((o) => o.content),
-        ];
-        const newPendingOps: any[] = transformType(localOps, ops, otType)[0];
+      const opsFromServer = res.ops!;
+      this.serverOps.push(...opsFromServer);
+      const my = opsFromServer.pop()!;
+
+      const remoteOpEvent = new RemoteOpEvent();
+      remoteOpEvent.prevOps = opsFromServer;
+      remoteOpEvent.myOp = my;
+      this.dispatchEvent(remoteOpEvent);
+
+      this.version = my.version + 1;
+      if (opsFromServer.length) {
+        this.version = last(opsFromServer).version + 1;
+
+        const opForEvents: any[] = [];
+
+        for (const pendingOp of localOps.concat().reverse()) {
+          opForEvents.push(pendingOp.invert.content);
+          this.apply(pendingOp.invert.content, false);
+        }
+
+        const localOpsCongent = localOps.map((o) => o.op.content);
+
+        const newPendingOps: any[] = transformType(
+          localOpsCongent,
+          opsFromServer,
+          otType,
+        )[0];
+
         newPendingOps.shift();
         for (let i = 0; i < newPendingOps.length; i++) {
-          this.pendingOps[i].content = newPendingOps[i].content;
+          pendingOps[i].op.content = newPendingOps[i].content;
         }
-        let l = localOps.length;
-        const { undoStack } = this;
-        const opForEvents: any[] = [];
-        while (l) {
-          --l;
-          const undo = undoStack.pop()!;
-          opForEvents.push(undo.invert);
-          this.apply(undo.invert, false);
-        }
-        for (const o of ops.map((o) => o.content)) {
+
+        for (const o of opsFromServer.map((o) => o.content)) {
           opForEvents.push(o);
           this.apply(o, false);
         }
-        inflightOp.content = my.content;
-        inflightOp.version = my.version;
-        for (const op of [inflightOp, ...newPendingOps]) {
-          opForEvents.push(op.content);
-          const invert = this.apply(op.content, true);
-          undoStack.push({
-            op,
-            invert,
-          });
+        inflightOp.op.content = my.content;
+        inflightOp.op.version = my.version;
+        for (const pendingOp of [inflightOp, ...pendingOps]) {
+          opForEvents.push(pendingOp.op.content);
+          pendingOp.invert.content = this.apply(pendingOp.op.content, true);
         }
         this.fireOpEvent(opForEvents, false);
-        this.syncRemotePresences(opForEvents);
       }
     }
   }
 
-  async fetch() {
+  async fetchOps(fromVersion: number, toVersion?: number) {
+    return (await this.send({
+      type: 'getOps',
+      fromVersion,
+      toVersion,
+      seq: 0,
+    })) as GetOpsResponse;
+  }
+
+  public async fetch() {
     const { otType } = this;
     const response = await this.send({
       type: 'getSnapshot',
@@ -439,7 +324,7 @@ export class Doc extends EventTarget<[OpEvent, PresenceEvent]> {
         }
         this.version = snapshot.version;
         for (const p of ops) {
-          this.version = p.version;
+          this.version = p.version + 1;
           content = applyAndInvert(content, p.content, false, otType)[0];
         }
         this.data = otType.deserialize?.(content) ?? content;

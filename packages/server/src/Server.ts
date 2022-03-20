@@ -1,9 +1,5 @@
 import type { DB, PubSub } from './types';
-import type {
-  OTType,
-  PresenceIO,
-  RemoteOpResponse,
-} from 'ot-engine-common';
+import type { OTType, PresenceIO, RemoteOpResponse } from 'ot-engine-common';
 import { Agent } from './Agent';
 import type { Duplex } from 'stream';
 import { MemoryPubSub } from './MemoryPubSub';
