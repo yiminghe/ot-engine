@@ -8,6 +8,7 @@ import {
   SaveSnapshotParams,
   Snapshot,
 } from 'ot-engine-common';
+import { isObject } from 'util';
 
 export class DBDoc {
   ops: Map<number, Op> = new Map();
@@ -69,6 +70,7 @@ export class MemoryDB implements DB {
             docId: params.docId,
             collection: params.collection,
             fromVersion: version,
+            toVersion: params.toVersion,
           }),
         };
       }
@@ -86,7 +88,11 @@ export class MemoryDB implements DB {
     return doc;
   }
   async commitOp(params: CommitOpParams) {
-    this.getOrCreateDoc(params).ops.set(params.op.version, params.op);
+    const { ops } = this.getOrCreateDoc(params);
+    if (ops.has(params.op.version)) {
+      throw new Error('op version conflict: ' + params.op.version);
+    }
+    ops.set(params.op.version, params.op);
   }
   async saveSnapshot(params: SaveSnapshotParams) {
     this.getOrCreateDoc(params).snapshots.set(params.version, params.snapshot);

@@ -79,6 +79,7 @@ export interface GetSnapshotParams {
   collection: string;
   docId: string;
   version?: number;
+  toVersion?: number;
 }
 
 export interface CommitOpParams {

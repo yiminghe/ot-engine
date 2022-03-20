@@ -2,6 +2,7 @@ import type { Duplex } from 'stream';
 import type { Server } from './Server';
 import {
   OTType,
+  CommitOpParams,
   ClientResponse,
   ClientRequest,
   CommitOpRequest,
@@ -22,10 +23,6 @@ export class Agent {
   closed = false;
 
   docInfo: { docId: string; collection: string };
-
-  data: any;
-
-  version: number = 1;
 
   constructor(
     public server: Server,
@@ -84,6 +81,31 @@ export class Agent {
     this.stream.write(message);
   }
 
+  async checkAndSaveSnapshot(op: Op) {
+    const { server, otType } = this;
+    if (op.version % server.config.saveInterval === 0) {
+      const snapshotAndOps = await server.db.getSnapshot({
+        ...this.docInfo,
+        version: op.version,
+        toVersion: op.version,
+      });
+      if (snapshotAndOps) {
+        let { content, version } = snapshotAndOps.snapshot;
+        let snapshot = otType.create?.(content) ?? content;
+        for (const op of snapshotAndOps.ops) {
+          version = op.version + 1;
+          snapshot = applyAndInvert(snapshot, op.content, false, otType);
+        }
+        snapshot = otType.deserialize?.(snapshot) ?? snapshot;
+        server.db.saveSnapshot({
+          ...this.docInfo,
+          snapshot,
+          version,
+        });
+      }
+    }
+  }
+
   async handleCommitOpRequest(request: CommitOpRequest) {
     let ok = false;
     let sendOps: Op[] = [];
@@ -92,7 +114,7 @@ export class Agent {
       seq: request.seq,
     };
     const { server, otType, docInfo } = this;
-
+    let newOp: Op = undefined!;
     while (!ok) {
       const ops = await server.db.getOps({
         ...docInfo,
@@ -113,7 +135,7 @@ export class Agent {
       } else {
         sendOps = [op];
       }
-      const newOp = last(sendOps);
+      newOp = last(sendOps)!;
       try {
         await server.db.commitOp({
           ...docInfo,
@@ -124,8 +146,6 @@ export class Agent {
         ok = false;
       }
     }
-
-    const newOp = last(sendOps);
     this.send({
       ...responseInfo,
       ops: sendOps,
@@ -135,19 +155,7 @@ export class Agent {
       agentId: this.agentId,
       ops: [newOp],
     });
-    for (const sp of sendOps) {
-      if (sp.version >= this.version) {
-        this.data = applyAndInvert(this.data, sp, false, otType)[0];
-      }
-    }
-    this.version = newOp.version + 1;
-    if (newOp.version % server.config.saveInterval === 0) {
-      server.db.saveSnapshot({
-        ...docInfo,
-        snapshot: otType.serialize?.(this.data) ?? this.data,
-        version: this.version,
-      });
-    }
+    this.checkAndSaveSnapshot(newOp);
   }
 
   handleMessage = async (request: ClientRequest) => {
@@ -184,19 +192,6 @@ export class Agent {
         ...responseInfo,
         snapshotAndOps,
       });
-      if (!this.data && snapshotAndOps) {
-        const { snapshot, ops } = snapshotAndOps;
-        let { content } = snapshot;
-        if (otType.create) {
-          content = otType.create(content);
-        }
-        this.version = snapshot.version;
-        for (const p of ops) {
-          content = applyAndInvert(content, p.content, false, otType)[0];
-          this.version = p.version + 1;
-        }
-        this.data = otType.deserialize?.(content) ?? content;
-      }
     } else if (request.type === 'commitOp') {
       this.handleCommitOpRequest(request);
     }
