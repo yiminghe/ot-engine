@@ -76,6 +76,13 @@ export class Server {
     return this.config.db;
   }
 
+  printAgentSize() {
+    for (const key of Array.from(this.agentsMap.keys())) {
+      const set = this.agentsMap.get(key)!;
+      console.log(key + ' agent count: ' + set.size);
+    }
+  }
+
   public handleStream(
     stream: Duplex,
     collection: string,
@@ -85,5 +92,6 @@ export class Server {
     const agent = new Agent(this, stream, collection, docId, otType);
     this.addAgent(agent);
     agent.open();
+    this.printAgentSize();
   }
 }

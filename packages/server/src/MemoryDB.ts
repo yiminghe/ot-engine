@@ -34,6 +34,8 @@ export class MemoryDB implements DB {
         const op = doc.ops.get(i);
         if (op) {
           ops.push(op);
+        } else {
+          break;
         }
       }
       return ops;
@@ -94,6 +96,7 @@ export class MemoryDB implements DB {
     ops.set(params.op.version, params.op);
   }
   async saveSnapshot(params: SaveSnapshotParams) {
-    this.getOrCreateDoc(params).snapshots.set(params.version, params.snapshot);
+    const { snapshot } = params;
+    this.getOrCreateDoc(params).snapshots.set(snapshot.version, snapshot);
   }
 }

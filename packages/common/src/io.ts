@@ -91,6 +91,8 @@ export interface CommitOpParams {
 export interface SaveSnapshotParams<S = any> {
   collection: string;
   docId: string;
-  snapshot: S;
-  version: number;
+  snapshot: {
+    content: S;
+    version: number;
+  };
 }

@@ -63,7 +63,7 @@ export class PresenceManager {
 
   syncRemotePresences(ops: any[], onlyNormal = false) {
     const changed = new Map();
-    for (const item of this.remotePresence.values()) {
+    for (const item of Array.from(this.remotePresence.values())) {
       const { pending, normal } = item;
       if (!onlyNormal && pending) {
         const p = this.syncPresence(pending);

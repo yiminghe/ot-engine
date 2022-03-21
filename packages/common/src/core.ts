@@ -17,7 +17,6 @@ export type OTType<S = any, P = any> = {
 export interface Op<P = any> {
   version: number;
   id: string;
-  createdTime: number;
   content: P;
 }
 

@@ -61,11 +61,11 @@ export class UndoRedoStack {
     const item = this.stack.pop()!;
     if (item.accepted) {
       const [newContent, newNext] = transformType(
-        item.invert.content,
+        [item.invert.content],
         item.afterOps,
         this.doc.otType,
       );
-      item.invert.content = newContent;
+      item.invert.content = newContent[0];
       const lastItem = last(this.stack);
       if (lastItem) {
         lastItem.afterOps.push(...newNext);
@@ -113,12 +113,14 @@ export class UndoManager {
   undo() {
     const pendingOp = this.undoStack.pop()!;
     this.redoStack.push(pendingOp);
+    this.doc.apply(pendingOp.op.content, false);
     this.doc.submitPendingOp(pendingOp);
   }
 
   redo() {
     const pendingOp = this.redoStack.pop()!;
     this.undoStack.push(pendingOp);
+    this.doc.apply(pendingOp.op.content, false);
     this.doc.submitPendingOp(pendingOp);
   }
 }

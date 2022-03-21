@@ -1,7 +1,6 @@
 {
   "name": "ot-engine-client",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",
@@ -10,15 +9,50 @@
     "url": "git@github.com:yiminghe/ot-engine.git"
   },
   "main": "src/index.ts",
+  "@pika/pack": {
+    "pipeline": [
+      [
+        "pika-plugin-ts-types",
+        {
+          "args": [
+            "--rootDir",
+            "src"
+          ],
+          "yarn": true,
+          "tsconfig": "tsconfig.build.json"
+        }
+      ],
+      [
+        "pika-plugin-build-web-babel",
+        {
+          "format": "cjs",
+          "sourcemap": false
+        }
+      ],
+      [
+        "pika-plugin-build-web-babel",
+        {
+          "sourcemap": false
+        }
+      ],
+      [
+        "pika-plugin-clean-dist-src"
+      ]
+    ]
+  },
   "devDependencies": {
-    "@types/jest": "27.x",
-    "@types/node": "^17.0.21",
-    "typescript": "4.x"
+    "@pika/pack": "^0.5.0",
+    "typescript": "^4.6.2"
+  },
+  "scripts": {
+    "pub": "yarn run build && cd pkg && npm publish",
+    "build": "pika-pack build"
   },
   "dependencies": {
-    "ot-engine-common": "0.0.0",
+    "@types/uuid": "8.x",
+    "ot-engine-common": "0.0.1",
     "ts-event-target": "0.1.x",
-    "uuidv4": "6.x"
+    "uuid": "8.x"
   },
   "packageManager": "yarn@3.1.1"
 }

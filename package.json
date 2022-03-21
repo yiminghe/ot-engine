@@ -10,21 +10,36 @@
     "url": "git@github.com:yiminghe/ot-engine.git"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ],
   "scripts": {
-    "lint-fix":"yarn run lint --fix",
-    "lint":"yarn run eslint . --ext .ts",
+    "sync-md":"ts-node scripts/syncMd.ts",
+    "lint-fix": "yarn run lint --fix",
+    "lint": "yarn run eslint . --ext .ts",
     "check": "yarn run lint && tsc --noEmit",
-    "prettier": "prettier --write \"{packages,scripts}/**/*.{js,tsx,ts,jsx}\""
+    "prettier": "prettier --write \"{packages,scripts,examples}/**/*.{js,tsx,ts,jsx}\""
   },
   "devDependencies": {
+    "@babel/cli": "7.x",
+    "@babel/core": "7.x",
+    "@babel/node": "7.x",
+    "@babel/preset-env": "7.x",
+    "@babel/preset-typescript": "7.x",
+    "@pika/pack": "^0.5.0",
+    "@types/fs-extra": "^9.0.13",
+    "@types/jest": "27.x",
     "@types/node": "^17.0.21",
     "@typescript-eslint/eslint-plugin": "^5.15.0",
     "@typescript-eslint/parser": "^5.15.0",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^8.5.0",
+    "fs-extra": "^10.0.1",
+    "pika-plugin-build-web-babel": "^0.11.2",
+    "pika-plugin-clean-dist-src": "^0.1.1",
+    "pika-plugin-ts-types": "^0.1.5",
     "prettier": "2.x",
+    "ts-node": "^10.7.0",
     "typescript": "^4.6.2"
   },
   "packageManager": "yarn@3.1.1"

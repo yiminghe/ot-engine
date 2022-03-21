@@ -10,7 +10,7 @@ import {
   RemoteOpResponse,
   applyAndInvert,
 } from 'ot-engine-common';
-import { uuid } from 'uuidv4';
+import { v4 as uuid } from 'uuid';
 import { PubSubData } from './types';
 
 export class Agent {
@@ -36,18 +36,15 @@ export class Agent {
   }
 
   open() {
-    const { stream } = this;
+    const { stream, server } = this;
     stream.on('data', this.handleMessage);
     stream.on('close', this.clean);
     stream.on('end', this.clean);
+    server.pubSub.subscribe(this.subscribeId, this.onSubscribe);
   }
 
   get subscribeId() {
     return `${this.docInfo.collection}_${this.docInfo.docId}`;
-  }
-
-  subscribePubSub() {
-    this.server.pubSub.subscribe(this.subscribeId, this.onSubscribe);
   }
 
   onSubscribe = (e: PubSubData) => {
@@ -66,6 +63,7 @@ export class Agent {
   };
 
   clean = () => {
+    console.log('server clean');
     this.closed = true;
     this.server.deleteAgent(this);
     this.server.pubSub.unsubscribe(this.subscribeId, this.onSubscribe);
@@ -93,13 +91,15 @@ export class Agent {
         let snapshot = otType.create?.(content) ?? content;
         for (const op of snapshotAndOps.ops) {
           version = op.version + 1;
-          snapshot = applyAndInvert(snapshot, op.content, false, otType);
+          snapshot = applyAndInvert(snapshot, op.content, false, otType)[0];
         }
         snapshot = otType.deserialize?.(snapshot) ?? snapshot;
         server.db.saveSnapshot({
           ...this.docInfo,
-          snapshot,
-          version,
+          snapshot: {
+            content: snapshot,
+            version,
+          },
         });
       }
     }
@@ -169,6 +169,7 @@ export class Agent {
   }
 
   handleMessage = async (request: ClientRequest) => {
+    console.log('server onmessage', request);
     if (this.closed) {
       return;
     }
@@ -198,6 +199,7 @@ export class Agent {
         ...request,
         ...docInfo,
       });
+
       this.send({
         ...responseInfo,
         snapshotAndOps,

@@ -10,7 +10,7 @@ import {
   GetOpsResponse,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
-import { uuid } from 'uuidv4';
+import { v4 as uuid } from 'uuid';
 import { PresenceManager } from './PresenceManager';
 import { OpEvent, PendingOp, RemoteOpEvent, PresenceEvent } from './types';
 import { UndoManager } from './UndoManager';
@@ -98,6 +98,7 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
     this.socket = socket;
 
     socket.onmessage = (event) => {
+      console.log('client onmessage', event.data);
       let data;
       try {
         data =
@@ -215,7 +216,6 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
   public submitOp(opContent: any) {
     const op: Op = {
       id: uuid(),
-      createdTime: Date.now(),
       version: 0,
       content: opContent,
     };
@@ -224,7 +224,6 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
       op,
       invert: {
         version: 0,
-        createdTime: op.createdTime,
         id: '-' + op.id,
         content: invert,
       },
