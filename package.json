@@ -14,7 +14,8 @@
     "examples/*"
   ],
   "scripts": {
-    "sync-md":"ts-node scripts/syncMd.ts",
+    "test": "echo 0",
+    "sync-md": "ts-node scripts/syncMd.ts",
     "lint-fix": "yarn run lint --fix",
     "lint": "yarn run eslint . --ext .ts",
     "check": "yarn run lint && tsc --noEmit",
