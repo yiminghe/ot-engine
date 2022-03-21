@@ -4,6 +4,7 @@
 [![NPM downloads](http://img.shields.io/npm/dm/ot-engine-server.svg)](https://npmjs.org/package/ot-engine-server)
 [![NPM version](https://badge.fury.io/js/ot-engine-client.png)](http://badge.fury.io/js/ot-engine-client)
 [![NPM downloads](http://img.shields.io/npm/dm/ot-engine-client.svg)](https://npmjs.org/package/ot-engine-client)
+[![Build Status](https://app.travis-ci.com/yiminghe/ot-engine.svg?branch=main)](https://app.travis-ci.com/github/yiminghe/ot-engine)
 
 Operational transformation engine
 
