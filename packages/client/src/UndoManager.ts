@@ -56,10 +56,12 @@ export class UndoRedoStack {
     }
   }
 
-  pop(): PendingOp {
+  pop(): PendingOp & { needInvert: boolean } {
     this.reduceNextAcceptedIndex();
     const item = this.stack.pop()!;
+    let needInvert = false;
     if (item.accepted) {
+      needInvert = true;
       const [newContent, newNext] = transformType(
         [item.invert.content],
         item.afterOps,
@@ -72,6 +74,7 @@ export class UndoRedoStack {
       }
     }
     return {
+      needInvert,
       op: item.invert,
       invert: item.op,
     };
@@ -110,17 +113,20 @@ export class UndoManager {
     return !!this.redoStack.length;
   }
 
-  undo() {
-    const pendingOp = this.undoStack.pop()!;
-    this.redoStack.push(pendingOp);
-    this.doc.apply(pendingOp.op.content, false);
+  undoRedo(popStack: UndoRedoStack, pushStack: UndoRedoStack) {
+    const pendingOp = popStack.pop()!;
+    pushStack.push(pendingOp);
+    if (pendingOp.needInvert) {
+      pendingOp.invert.content = this.doc.apply(pendingOp.op.content, true);
+    }
     this.doc.submitPendingOp(pendingOp);
   }
 
+  undo() {
+    this.undoRedo(this.undoStack, this.redoStack);
+  }
+
   redo() {
-    const pendingOp = this.redoStack.pop()!;
-    this.undoStack.push(pendingOp);
-    this.doc.apply(pendingOp.op.content, false);
-    this.doc.submitPendingOp(pendingOp);
+    this.undoRedo(this.redoStack, this.undoStack);
   }
 }
