@@ -60,6 +60,36 @@ export type SnapshotAndOps<S, P> = {
   snapshot: Snapshot<S>;
   ops: Op<P>[];
 };
+
+export interface GetOpsParams {
+  collection: string;
+  docId: string;
+  fromVersion: number;
+  toVersion?: number;
+}
+
+export interface GetSnapshotParams {
+  collection: string;
+  docId: string;
+  version?: number;
+  toVersion?: number;
+}
+
+export interface CommitOpParams {
+  collection: string;
+  docId: string;
+  op: Op;
+}
+
+export interface SaveSnapshotParams<S = any> {
+  collection: string;
+  docId: string;
+  snapshot: {
+    content: S;
+    version: number;
+  };
+}
+
 export interface DB {
     getOps<P = unknown>(params: GetOpsParams): Promise<Op<P>[]>;
     getSnapshot<S = unknown, P = unknown>(params: GetSnapshotParams): Promise<SnapshotAndOps<S, P> | undefined>;
