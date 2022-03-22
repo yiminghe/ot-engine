@@ -6,7 +6,7 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 const collection = 'examples';
 const docId = 'tree';
 const clientId = v4(); // userId+Date.now();
-// Open WebSocket connection to ShareDB server
+// Open WebSocket connection
 const socket: any = new ReconnectingWebSocket(
   'ws://' +
     window.location.host.replace(':3000', ':8080') +

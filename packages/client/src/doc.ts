@@ -314,7 +314,7 @@ export class Doc extends EventTarget<
       const remoteOpEvent = new RemoteOpEvent();
       remoteOpEvent.prevOps = prevOps;
       remoteOpEvent.afterOps = afterOps;
-      remoteOpEvent.myOp = my;
+      remoteOpEvent.sourceOp = my;
       this.dispatchEvent(remoteOpEvent);
 
       this.version = last(opsFromServer).version + 1;

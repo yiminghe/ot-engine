@@ -47,13 +47,13 @@ export class RemotePresence {
     }
   }
 
-  onRemoteOp({ prevOps, myOp, afterOps }: RemoteOpEvent) {
+  onRemoteOp({ prevOps, sourceOp, afterOps }: RemoteOpEvent) {
     const ops = this.serverOps;
     if (prevOps) {
       ops.push(...prevOps);
     }
-    if (myOp) {
-      ops.push(myOp);
+    if (sourceOp) {
+      ops.push(sourceOp);
     }
     if (afterOps) {
       ops.push(...afterOps);

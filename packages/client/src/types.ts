@@ -11,7 +11,7 @@ export class OpEvent extends Event<'op'> {
 
 export class RemoteOpEvent extends Event<'remoteOp'> {
   prevOps?: Op[];
-  myOp?: Op;
+  sourceOp?: Op;
   afterOps?: Op[];
   constructor() {
     super('remoteOp');

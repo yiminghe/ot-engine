@@ -32,7 +32,7 @@ function startServer() {
   const server = http.createServer(app);
   const inited: Map<string, Promise<void>> = new Map();
 
-  // Connect any incoming WebSocket connection to ShareDB
+  // Connect any incoming WebSocket
   const wss = new WebSocket.Server({ server: server });
   wss.on('connection', async function (ws, req) {
     console.log('server connect!', req.url!);
