@@ -1,6 +1,6 @@
 {
   "name": "ot-engine-common",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",
@@ -48,5 +48,5 @@
     "build": "pika-pack build"
   },
   "main": "src/index.ts",
-  "packageManager": "yarn@3.1.1"
+  "packageManager": "yarn@3.2.0"
 }

@@ -15,20 +15,22 @@
     "@types/react-dom": "^16.9.8",
     "@types/react-redux": "7.x",
     "@types/react-sortable-tree": "0.3.x",
+    "@types/uuid": "8.x",
     "@yiminghe/react-scripts": "5.x",
     "express": "^4.14.0",
     "immer": "9.x",
-    "ot-engine-client": "0.0.x",
-    "ot-engine-server": "0.0.x",
+    "ot-engine": "0.0.4",
     "ot-tree": "1.x",
+    "qs": "6.x",
     "react": "16.x",
     "react-dom": "16.x",
     "react-redux": "7.x",
     "react-sortable-tree": "^2.8.0",
-    "reconnecting-websocket": "^4.2.0",
+    "reconnecting-websocket": "4.x",
     "redux": "4.x",
     "ts-node": "10.x",
     "typescript": "4.x",
+    "uuid": "8.x",
     "ws": "^7.2.0"
   },
   "browserslist": {
@@ -42,5 +44,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "packageManager": "yarn@3.2.0"
 }

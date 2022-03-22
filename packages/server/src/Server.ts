@@ -1,24 +1,23 @@
 import type { DB, PubSub } from './types';
-import type { OTType, PresenceIO, RemoteOpResponse } from 'ot-engine-common';
-import { Agent } from './Agent';
-import type { Duplex } from 'stream';
+import type { PresenceIO, RemoteOpResponse } from 'ot-engine-common';
+import { Agent, AgentConfig } from './Agent';
 import { MemoryPubSub } from './MemoryPubSub';
 import { MemoryDB } from './MemoryDB';
 
-export interface ServerParams {
+export interface ServerConfig {
   saveInterval?: number;
   db?: DB;
   pubSub?: PubSub;
 }
 
-type ServerConfig = Required<ServerParams>;
+type ServerConfig_ = Required<ServerConfig>;
 
 export class Server {
-  config: ServerConfig;
+  config: ServerConfig_;
 
   agentsMap: Map<string, Set<Agent>> = new Map();
 
-  constructor(config: ServerParams) {
+  constructor(config: ServerConfig = {}) {
     config = this.config = {
       saveInterval: 50,
       db: undefined!,
@@ -83,13 +82,8 @@ export class Server {
     }
   }
 
-  public handleStream(
-    stream: Duplex,
-    collection: string,
-    docId: string,
-    otType: OTType,
-  ) {
-    const agent = new Agent(this, stream, collection, docId, otType);
+  public handleStream(config: AgentConfig) {
+    const agent = new Agent(this, config);
     this.addAgent(agent);
     agent.open();
     this.printAgentSize();

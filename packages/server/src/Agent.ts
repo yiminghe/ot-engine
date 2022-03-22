@@ -10,29 +10,38 @@ import {
   RemoteOpResponse,
   applyAndInvert,
 } from 'ot-engine-common';
-import { v4 as uuid } from 'uuid';
 import { PubSubData } from './types';
 
+export interface AgentConfig {
+  stream: Duplex;
+  collection: string;
+  docId: string;
+  clientId: string;
+  otType: OTType;
+}
+
 export class Agent {
-  agentId = uuid();
-
-  clientId = '';
-
   closed = false;
 
-  docInfo: { docId: string; collection: string };
+  constructor(public server: Server, private config: AgentConfig) {}
 
-  constructor(
-    public server: Server,
-    public stream: Duplex,
-    collection: string,
-    docId: string,
-    private otType: OTType,
-  ) {
-    this.docInfo = {
-      docId,
-      collection,
+  get docInfo() {
+    return {
+      docId: this.config.docId,
+      collection: this.config.collection,
     };
+  }
+
+  get stream() {
+    return this.config.stream;
+  }
+
+  get clientId() {
+    return this.config.clientId;
+  }
+
+  get otType() {
+    return this.config.otType;
   }
 
   open() {
@@ -52,7 +61,7 @@ export class Agent {
       return;
     }
     const data: RemoteOpResponse = e.data;
-    if (data.agentId === this.agentId) {
+    if (data.clientId === this.clientId) {
       return;
     }
     this.send(data);
@@ -162,7 +171,7 @@ export class Agent {
     });
     server.broadcast(this, {
       type: 'remoteOp',
-      agentId: this.agentId,
+      clientId: this.clientId,
       ops: [newOp],
     });
     this.checkAndSaveSnapshot(newOp);

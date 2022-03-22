@@ -1,6 +1,6 @@
 {
   "name": "ot-engine-client",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",
@@ -49,10 +49,8 @@
     "build": "pika-pack build"
   },
   "dependencies": {
-    "@types/uuid": "8.x",
-    "ot-engine-common": "0.0.1",
-    "ts-event-target": "0.1.x",
-    "uuid": "8.x"
+    "ot-engine-common": "0.0.4",
+    "ts-event-target": "0.1.x"
   },
-  "packageManager": "yarn@3.1.1"
+  "packageManager": "yarn@3.2.0"
 }

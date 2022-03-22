@@ -10,12 +10,12 @@ import {
   GetOpsResponse,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
-import { v4 as uuid } from 'uuid';
 import { PresenceManager } from './PresenceManager';
 import { OpEvent, PendingOp, RemoteOpEvent, PresenceEvent } from './types';
 import { UndoManager } from './UndoManager';
 
 interface DocConfig {
+  clientId: string;
   socket: WebSocket;
   otType: OTType;
   undoStackLimit?: number;
@@ -29,11 +29,11 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
 
   seq = 0;
 
+  uid = 0;
+
   undoManager = new UndoManager(this);
 
   presenceManager = new PresenceManager(this);
-
-  clientId = uuid();
 
   closed = false;
 
@@ -58,6 +58,14 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
     };
     this.bindToSocket(config.socket);
     this.socket = config.socket;
+  }
+
+  getUuid() {
+    return `${this.clientId}-${++this.uid}`;
+  }
+
+  get clientId() {
+    return this.config.clientId;
   }
 
   get otType() {
@@ -215,7 +223,7 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
 
   public submitOp(opContent: any) {
     const op: Op = {
-      id: uuid(),
+      id: this.getUuid(),
       version: 0,
       content: opContent,
     };
