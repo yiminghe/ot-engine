@@ -13,7 +13,7 @@ export class UndoRedoStack {
   stack: UndoRedoItem[] = [];
   nextAcceptedIndex = 0;
 
-  constructor(private doc: Doc) {}
+  constructor(private doc: Doc) { }
 
   onRemoteOp({ prevOps, myOp, afterOps }: RemoteOpEvent) {
     const { stack } = this;
@@ -60,7 +60,7 @@ export class UndoRedoStack {
     this.reduceNextAcceptedIndex();
     const item = this.stack.pop()!;
     let needInvert = false;
-    if (item.accepted) {
+    if (item.accepted && item.afterOps.length) {
       needInvert = true;
       const [newContent, newNext] = transformType(
         [item.invert.content],
