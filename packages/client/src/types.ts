@@ -18,10 +18,22 @@ export class RemoteOpEvent extends Event<'remoteOp'> {
   }
 }
 
-export class PresenceEvent extends Event<'presence'> {
+export class RemoteDeleteDocEvent extends Event<'remoteDeleteDoc'> {
+  constructor() {
+    super('remoteDeleteDoc');
+  }
+}
+
+export class RemotePresenceEvent extends Event<'remotePresence'> {
   changed: Map<string, any | null> = new Map();
   constructor() {
-    super('presence');
+    super('remotePresence');
+  }
+}
+
+export class NoPendingEvent extends Event<'noPending'> {
+  constructor() {
+    super('noPending');
   }
 }
 

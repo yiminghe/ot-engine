@@ -87,3 +87,15 @@ function transform(
 export function last<T>(arr: T[], index = 1) {
   return arr[arr.length - index];
 }
+
+export class OTError extends Error {
+  type = 'otError';
+  info: { subType: string; detail: any; type: string };
+  constructor(info: { subType: string; detail: any }) {
+    super(info.subType);
+    this.info = {
+      ...info,
+      type: this.type,
+    };
+  }
+}

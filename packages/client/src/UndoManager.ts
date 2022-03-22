@@ -13,7 +13,7 @@ export class UndoRedoStack {
   stack: UndoRedoItem[] = [];
   nextAcceptedIndex = 0;
 
-  constructor(private doc: Doc) { }
+  constructor(private doc: Doc) {}
 
   onRemoteOp({ prevOps, myOp, afterOps }: RemoteOpEvent) {
     const { stack } = this;

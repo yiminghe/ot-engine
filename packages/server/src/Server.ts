@@ -1,5 +1,9 @@
 import type { DB, PubSub } from './types';
-import type { PresenceIO, RemoteOpResponse } from 'ot-engine-common';
+import type {
+  DeleteDocResponse,
+  PresenceIO,
+  RemoteOpResponse,
+} from 'ot-engine-common';
 import { Agent, AgentConfig } from './Agent';
 import { MemoryPubSub } from './MemoryPubSub';
 import { MemoryDB } from './MemoryDB';
@@ -47,7 +51,10 @@ export class Server {
     agents.add(agent);
   }
 
-  broadcast(from: Agent, message: RemoteOpResponse | PresenceIO) {
+  broadcast(
+    from: Agent,
+    message: RemoteOpResponse | PresenceIO | Omit<DeleteDocResponse, 'seq'>,
+  ) {
     this.pubSub.publish(from.subscribeId, message);
   }
 

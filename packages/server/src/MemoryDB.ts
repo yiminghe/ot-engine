@@ -7,9 +7,21 @@ import {
   CommitOpParams,
   SaveSnapshotParams,
   Snapshot,
+  DeleteDocParams,
+  OTError,
 } from 'ot-engine-common';
 
+function checkDeleted(doc: DBDoc | undefined) {
+  if (doc?.deleted) {
+    throw new OTError({
+      subType: 'deleted',
+      detail: {},
+    });
+  }
+}
+
 export class DBDoc {
+  deleted = false;
   ops: Map<number, Op> = new Map();
   snapshots: Map<number, Snapshot> = new Map();
 }
@@ -29,6 +41,7 @@ export class MemoryDB implements DB {
     const doc = this.docs.get(getDocKey(params));
     const ops: Op[] = [];
     if (doc) {
+      checkDeleted(doc);
       const toVersion = params.toVersion ?? Infinity;
       for (let i = params.fromVersion; i <= toVersion; i++) {
         const op = doc.ops.get(i);
@@ -46,6 +59,7 @@ export class MemoryDB implements DB {
     const doc = this.docs.get(getDocKey(params));
 
     if (doc) {
+      checkDeleted(doc);
       const { snapshots } = doc;
       if (params.version === undefined) {
         const snapshot = last(Array.from(snapshots.values()));
@@ -56,6 +70,7 @@ export class MemoryDB implements DB {
           snapshot,
           ops: await this.getOps({
             docId: params.docId,
+            custom: params.custom,
             collection: params.collection,
             fromVersion: snapshot.version,
           }),
@@ -69,6 +84,7 @@ export class MemoryDB implements DB {
           snapshot: snapshots.get(version)!,
           ops: await this.getOps({
             docId: params.docId,
+            custom: params.custom,
             collection: params.collection,
             fromVersion: version,
             toVersion: params.toVersion,
@@ -82,6 +98,7 @@ export class MemoryDB implements DB {
   getOrCreateDoc(params: DocInfo) {
     const docKey = getDocKey(params);
     let doc = this.docs.get(docKey);
+    checkDeleted(doc);
     if (!doc) {
       doc = new DBDoc();
       this.docs.set(docKey, doc);
@@ -98,5 +115,12 @@ export class MemoryDB implements DB {
   async saveSnapshot(params: SaveSnapshotParams) {
     const { snapshot } = params;
     this.getOrCreateDoc(params).snapshots.set(snapshot.version, snapshot);
+  }
+
+  async deleteDoc(params: DeleteDocParams): Promise<void> {
+    const doc = this.docs.get(getDocKey(params));
+    if (doc) {
+      doc.deleted = true;
+    }
   }
 }

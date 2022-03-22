@@ -1,6 +1,12 @@
 import type { Op, SnapshotAndOps, Presence } from './core';
 
-type DocInfoKeys = 'collection' | 'docId';
+type AgentInfo = {
+  custom?: any;
+  docId: string;
+  collection: string;
+};
+
+type AgentInfoKeys = keyof AgentInfo;
 
 interface BaseRequest {
   seq: number;
@@ -12,24 +18,31 @@ export interface PresenceIO {
 }
 
 export interface GetSnapshotRequest
-  extends Omit<GetSnapshotParams, DocInfoKeys>,
+  extends Omit<GetSnapshotParams, AgentInfoKeys>,
     BaseRequest {
   type: 'getSnapshot';
 }
 
+export interface DeleteDocRequest
+  extends Omit<DeleteDocParams, AgentInfoKeys>,
+    BaseRequest {
+  type: 'deleteDoc';
+}
+
 export interface GetOpsRequest
-  extends Omit<GetOpsParams, DocInfoKeys>,
+  extends Omit<GetOpsParams, AgentInfoKeys>,
     BaseRequest {
   type: 'getOps';
 }
 
 export interface CommitOpRequest
-  extends Omit<CommitOpParams, DocInfoKeys>,
+  extends Omit<CommitOpParams, AgentInfoKeys>,
     BaseRequest {
   type: 'commitOp';
 }
 
 export type ClientRequest =
+  | DeleteDocRequest
   | PresenceIO
   | GetSnapshotRequest
   | GetOpsRequest
@@ -40,9 +53,13 @@ interface BaseResponse {
   error?: any;
 }
 
-export interface GetSnapshotResponse<S, P> extends BaseResponse {
+export interface GetSnapshotResponse<S = any, P = any> extends BaseResponse {
   type: 'getSnapshot';
   snapshotAndOps?: SnapshotAndOps<S, P>;
+}
+
+export interface DeleteDocResponse extends BaseResponse {
+  type: 'deleteDoc';
 }
 
 export interface GetOpsResponse<P = any> extends BaseResponse {
@@ -62,35 +79,30 @@ export interface RemoteOpResponse<P = any> {
 }
 
 export type ClientResponse<S = any, P = any> =
+  | DeleteDocResponse
   | PresenceIO
   | CommitOpResponse<P>
   | GetOpsResponse<P>
   | GetSnapshotResponse<S, P>
   | RemoteOpResponse<P>;
 
-export interface GetOpsParams {
-  collection: string;
-  docId: string;
+export interface GetOpsParams extends AgentInfo {
   fromVersion: number;
   toVersion?: number;
 }
 
-export interface GetSnapshotParams {
-  collection: string;
-  docId: string;
+export type DeleteDocParams = AgentInfo;
+
+export interface GetSnapshotParams extends AgentInfo {
   version?: number;
   toVersion?: number;
 }
 
-export interface CommitOpParams {
-  collection: string;
-  docId: string;
+export interface CommitOpParams extends AgentInfo {
   op: Op;
 }
 
-export interface SaveSnapshotParams<S = any> {
-  collection: string;
-  docId: string;
+export interface SaveSnapshotParams<S = any> extends AgentInfo {
   snapshot: {
     content: S;
     version: number;

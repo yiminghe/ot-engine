@@ -1,8 +1,8 @@
 import { Doc } from './doc';
 import { Op, Presence, transformPresence, PresenceIO } from 'ot-engine-common';
-import { RemoteOpEvent, PresenceEvent, PresenceItem } from './types';
+import { RemoteOpEvent, RemotePresenceEvent, PresenceItem } from './types';
 
-export class PresenceManager {
+export class RemotePresence {
   remotePresence: Map<string, PresenceItem> = new Map();
 
   serverOps: Op[] = [];
@@ -17,9 +17,11 @@ export class PresenceManager {
   }
 
   constructor(private doc: Doc) {
-    doc.addEventListener('op', (e) => {
-      this.syncRemotePresences(e.ops, e.source);
-    });
+    if (doc.otType.transformPresence) {
+      doc.addEventListener('op', (e) => {
+        this.syncRemotePresences(e.ops, e.source);
+      });
+    }
   }
 
   onPresenceResponse(response: PresenceIO) {
@@ -31,14 +33,14 @@ export class PresenceManager {
       if (syncedPresence) {
         item.pending = undefined;
         item.normal = syncedPresence;
-        const event = new PresenceEvent();
+        const event = new RemotePresenceEvent();
         event.changed.set(presence.clientId, syncedPresence);
         doc.dispatchEvent(event);
       } else {
         item.pending = presence;
       }
     } else {
-      const event = new PresenceEvent();
+      const event = new RemotePresenceEvent();
       this.remotePresence.delete(presence.clientId);
       event.changed.set(presence.clientId, null);
       doc.dispatchEvent(event);
@@ -84,7 +86,7 @@ export class PresenceManager {
       }
     }
     if (changed.size) {
-      const event = new PresenceEvent();
+      const event = new RemotePresenceEvent();
       event.changed = changed;
       this.doc.dispatchEvent(event);
     }

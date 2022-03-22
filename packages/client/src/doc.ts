@@ -8,10 +8,19 @@ import {
   last,
   applyAndInvert,
   GetOpsResponse,
+  DeleteDocResponse,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
-import { PresenceManager } from './PresenceManager';
-import { OpEvent, PendingOp, RemoteOpEvent, PresenceEvent } from './types';
+import { RemotePresence } from './RemotePresence';
+import { LocalPresence } from './LocalPresence';
+import {
+  NoPendingEvent,
+  OpEvent,
+  PendingOp,
+  RemoteOpEvent,
+  RemotePresenceEvent,
+  RemoteDeleteDocEvent,
+} from './types';
 import { UndoManager } from './UndoManager';
 
 interface DocConfig {
@@ -22,7 +31,15 @@ interface DocConfig {
   cacheServerOpsLimit?: number;
 }
 
-export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
+export class Doc extends EventTarget<
+  [
+    OpEvent,
+    NoPendingEvent,
+    RemoteOpEvent,
+    RemoteDeleteDocEvent,
+    RemotePresenceEvent,
+  ]
+> {
   socket: WebSocket;
 
   config: Required<DocConfig>;
@@ -31,9 +48,11 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
 
   uid = 0;
 
-  undoManager = new UndoManager(this);
+  undoManager: UndoManager;
 
-  presenceManager = new PresenceManager(this);
+  remotePresence: RemotePresence;
+
+  localPresence: LocalPresence;
 
   closed = false;
 
@@ -47,8 +66,6 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
 
   inflightOp: PendingOp | undefined;
 
-  localPresenceGet?: () => any;
-
   constructor(config: DocConfig) {
     super();
     this.config = {
@@ -58,6 +75,9 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
     };
     this.bindToSocket(config.socket);
     this.socket = config.socket;
+    this.undoManager = new UndoManager(this);
+    this.remotePresence = new RemotePresence(this);
+    this.localPresence = new LocalPresence(this);
   }
 
   getUuid() {
@@ -131,10 +151,18 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
 
   send(request: ClientRequest) {
     const seq = ++this.seq;
-    const promise = new Promise<ClientResponse>((resolve) => {
+    const promise = new Promise<ClientResponse>((resolve, reject) => {
       this.callMap.set(seq, (arg: any) => {
         this.callMap.delete(seq);
-        resolve(arg);
+        if (arg.error) {
+          if (arg.error.type === 'otError' && arg.error.subType === 'deleted') {
+            const deletedEvent = new RemoteDeleteDocEvent();
+            this.dispatchEvent(deletedEvent);
+          }
+          reject(arg.error);
+        } else {
+          resolve(arg);
+        }
       });
     });
     const r: any = {
@@ -146,6 +174,14 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
   }
 
   async handleResponse(response: ClientResponse) {
+    if (response.type === 'deleteDoc') {
+      const res: Omit<DeleteDocResponse, 'seq'> = response;
+      if (!('seq' in res)) {
+        const remoteDeleteDocEvent = new RemoteDeleteDocEvent();
+        return this.dispatchEvent(remoteDeleteDocEvent);
+      }
+    }
+
     if (response.type === 'remoteOp') {
       if (!this.inflightOp) {
         let ops = response.ops;
@@ -175,7 +211,7 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
         this.fireOpEvent(opContents, false);
       }
     } else if (response.type === 'presence') {
-      this.presenceManager.onPresenceResponse(response);
+      this.remotePresence.onPresenceResponse(response);
     } else {
       const seq = response.seq;
       const resolve = this.callMap.get(seq);
@@ -193,26 +229,20 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
     return p;
   }
 
-  public submitPresence(get: () => any) {
-    this.localPresenceGet = get;
-    this.checkAndSubmitPresence();
+  public submitPresence(presence: any) {
+    this.localPresence.submit(presence);
   }
 
-  checkAndSubmitPresence() {
-    if (this.localPresenceGet && !this.inflightOp && !this.pendingOps.length) {
-      const presenceContent = this.localPresenceGet();
-      this.localPresenceGet = undefined;
-      if (presenceContent) {
-        this.send({
-          type: 'presence',
-          presence: {
-            version: this.version,
-            content: presenceContent,
-            clientId: this.clientId,
-          },
+  waitNoPending() {
+    return new Promise<void>((resolve) => {
+      if (this.allPendingOps.length) {
+        this.addEventListener('noPending', () => resolve(), {
+          once: true,
         });
+      } else {
+        resolve();
       }
-    }
+    });
   }
 
   submitPendingOp(op: PendingOp) {
@@ -258,7 +288,8 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
         this.inflightOp = undefined;
       }
     }
-    this.checkAndSubmitPresence();
+    const noPendingEvent = new NoPendingEvent();
+    this.dispatchEvent(noPendingEvent);
   }
 
   handleCommitOpResponse(res: CommitOpResponse) {
@@ -335,29 +366,32 @@ export class Doc extends EventTarget<[OpEvent, RemoteOpEvent, PresenceEvent]> {
     }
   }
 
+  public async delete() {
+    await this.send({
+      type: 'deleteDoc',
+      seq: 0,
+    });
+  }
+
   public async fetch() {
     const { otType } = this;
     const response = await this.send({
       type: 'getSnapshot',
       seq: 0,
     });
-    if (response.type === 'getSnapshot') {
-      if (response.snapshotAndOps) {
-        const { snapshot, ops } = response.snapshotAndOps;
-        let { content } = snapshot;
-        if (otType.create) {
-          content = otType.create(content);
-        }
-        this.version = snapshot.version;
-        for (const p of ops) {
-          this.version = p.version + 1;
-          content = applyAndInvert(content, p.content, false, otType)[0];
-        }
-        this.data = otType.deserialize?.(content) ?? content;
-        return snapshot;
+    if (response.type === 'getSnapshot' && response.snapshotAndOps) {
+      const { snapshot, ops } = response.snapshotAndOps;
+      let { content } = snapshot;
+      if (otType.create) {
+        content = otType.create(content);
       }
-      throw new Error(response.error);
+      this.version = snapshot.version;
+      for (const p of ops) {
+        this.version = p.version + 1;
+        content = applyAndInvert(content, p.content, false, otType)[0];
+      }
+      this.data = otType.deserialize?.(content) ?? content;
+      return snapshot;
     }
-    throw new Error('unexpected response:' + response.type);
   }
 }

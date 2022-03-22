@@ -5,6 +5,7 @@ import type {
   GetSnapshotParams,
   CommitOpParams,
   SaveSnapshotParams,
+  DeleteDocParams,
 } from 'ot-engine-common';
 
 export interface DB {
@@ -14,6 +15,7 @@ export interface DB {
   ): Promise<SnapshotAndOps<S, P> | undefined>;
   commitOp(params: CommitOpParams): Promise<void>;
   saveSnapshot(params: SaveSnapshotParams): Promise<void>;
+  deleteDoc(params: DeleteDocParams): Promise<void>;
 }
 
 export interface PubSubData {

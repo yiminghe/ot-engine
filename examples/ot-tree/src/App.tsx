@@ -15,6 +15,7 @@ import { doc } from './doc';
 function noop() {}
 
 export function App() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, forceRender] = useState(0);
 
   // 获取 model

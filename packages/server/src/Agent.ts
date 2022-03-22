@@ -9,10 +9,12 @@ import {
   Op,
   RemoteOpResponse,
   applyAndInvert,
+  OTError,
 } from 'ot-engine-common';
 import { PubSubData } from './types';
 
 export interface AgentConfig {
+  custom?: any;
   stream: Duplex;
   collection: string;
   docId: string;
@@ -25,10 +27,23 @@ export class Agent {
 
   constructor(public server: Server, private config: AgentConfig) {}
 
-  get docInfo() {
+  get custom() {
+    return this.config.custom;
+  }
+
+  get docId() {
+    return this.config.docId;
+  }
+
+  get collection() {
+    return this.config.collection;
+  }
+
+  get agentInfo() {
     return {
-      docId: this.config.docId,
-      collection: this.config.collection,
+      collection: this.collection,
+      docId: this.docId,
+      custom: this.custom,
     };
   }
 
@@ -53,7 +68,7 @@ export class Agent {
   }
 
   get subscribeId() {
-    return `${this.docInfo.collection}_${this.docInfo.docId}`;
+    return `${this.collection}_${this.docId}`;
   }
 
   onSubscribe = (e: PubSubData) => {
@@ -90,7 +105,7 @@ export class Agent {
     const { server, otType } = this;
     if (op.version % server.config.saveInterval === 0) {
       const snapshotAndOps = await server.db.getSnapshot({
-        ...this.docInfo,
+        ...this.agentInfo,
         version: op.version,
         toVersion: op.version,
       });
@@ -104,7 +119,7 @@ export class Agent {
         }
         snapshot = otType.deserialize?.(snapshot) ?? snapshot;
         server.db.saveSnapshot({
-          ...this.docInfo,
+          ...this.agentInfo,
           snapshot: {
             content: snapshot,
             version,
@@ -121,11 +136,11 @@ export class Agent {
       type: request.type,
       seq: request.seq,
     };
-    const { server, docInfo } = this;
+    const { server, agentInfo } = this;
     let newOp: Op = undefined!;
     while (!ok) {
       const ops = await server.db.getOps({
-        ...docInfo,
+        ...agentInfo,
         fromVersion: request.op.version,
       });
 
@@ -157,7 +172,7 @@ export class Agent {
       }
       try {
         await server.db.commitOp({
-          ...docInfo,
+          ...agentInfo,
           op: newOp,
         });
         ok = true;
@@ -182,19 +197,51 @@ export class Agent {
     if (this.closed) {
       return;
     }
-    const { docInfo, server } = this;
+    const { agentInfo, server } = this;
     const { db } = server;
-    if (request.type === 'presence') {
+    if (request.type === 'deleteDoc') {
+      const responseInfo = {
+        type: request.type,
+        seq: request.seq,
+      };
+      try {
+        await db.deleteDoc({
+          ...agentInfo,
+        });
+      } catch (e: any) {
+        this.send({
+          ...responseInfo,
+          error: (e as OTError).info,
+        });
+        return;
+      }
+      this.send({
+        ...responseInfo,
+      });
+      server.broadcast(this, {
+        type: 'deleteDoc',
+      });
+    } else if (request.type === 'presence') {
+      request.presence.clientId = this.clientId;
       server.broadcast(this, request);
     } else if (request.type === 'getOps') {
       const responseInfo = {
         type: request.type,
         seq: request.seq,
       };
-      const ops = await db.getOps({
-        ...request,
-        ...docInfo,
-      });
+      let ops;
+      try {
+        ops = await db.getOps({
+          ...agentInfo,
+          ...request,
+        });
+      } catch (e: any) {
+        this.send({
+          ...responseInfo,
+          error: (e as OTError).info,
+        });
+        return;
+      }
       this.send({
         ...responseInfo,
         ops: ops,
@@ -204,11 +251,19 @@ export class Agent {
         type: request.type,
         seq: request.seq,
       };
-      const snapshotAndOps = await db.getSnapshot({
-        ...request,
-        ...docInfo,
-      });
-
+      let snapshotAndOps;
+      try {
+        snapshotAndOps = await db.getSnapshot({
+          ...request,
+          ...agentInfo,
+        });
+      } catch (e: any) {
+        this.send({
+          ...responseInfo,
+          error: (e as OTError).info,
+        });
+        return;
+      }
       this.send({
         ...responseInfo,
         snapshotAndOps,
