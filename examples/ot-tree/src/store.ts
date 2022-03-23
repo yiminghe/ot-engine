@@ -11,9 +11,11 @@ doc.fetch().then(() => {
   store.dispatch.model.set(doc2.data);
 });
 
+doc.addEventListener('beforeOp', (e) => {
+  console.log('before op', e.ops);
+  store.dispatch.model.onOp(e.ops);
+});
 doc.addEventListener('op', (e) => {
   console.log('apply op', e.ops);
-  const doc2 = doc;
-  store.dispatch.model.set(doc2.data);
-  store.dispatch.model.onOp(e.ops);
+  store.dispatch.model.set(doc.data);
 });

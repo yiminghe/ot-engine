@@ -22,20 +22,22 @@ export const model = {
     },
   },
   effects: (dispatch: any) => ({
-    onOp(ops: Operation[], rootState: any) {
+    onOp(opss: Operation[][], rootState: any) {
       const { treeData } = rootState.model as Model;
-      for (const op of ops) {
-        let removedNode;
-        if (op.type === 'remove_node') {
-          const { path } = op;
-          removedNode = getNodeAtPath(path, treeData);
-          const nodeIds = getIdsByDescendentsAndSelf(removedNode as TreeNode);
+      for (const ops of opss) {
+        for (const op of ops) {
+          let removedNode;
+          if (op.type === 'remove_node') {
+            const { path } = op;
+            removedNode = getNodeAtPath(path, treeData);
+            const nodeIds = getIdsByDescendentsAndSelf(removedNode as TreeNode);
 
-          const deleted: Record<string, null> = {};
-          for (const n of nodeIds) {
-            deleted[n] = null;
+            const deleted: Record<string, null> = {};
+            for (const n of nodeIds) {
+              deleted[n] = null;
+            }
+            dispatch.app.updateExpand(deleted);
           }
-          dispatch.app.updateExpand(deleted);
         }
       }
     },

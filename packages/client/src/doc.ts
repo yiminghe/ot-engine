@@ -20,6 +20,7 @@ import {
   RemoteOpEvent,
   RemotePresenceEvent,
   RemoteDeleteDocEvent,
+  BeforeOpEvent,
 } from './types';
 import { UndoManager } from './UndoManager';
 
@@ -34,6 +35,7 @@ interface DocConfig<S, P, Pr> {
 export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   [
     OpEvent<P>,
+    BeforeOpEvent<P>,
     NoPendingEvent,
     RemoteOpEvent<P>,
     RemoteDeleteDocEvent,
@@ -113,6 +115,13 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
   fireOpEvent(ops: P[], source = false) {
     const opEvent = new OpEvent<P>();
+    opEvent.ops = ops;
+    opEvent.source = source;
+    this.dispatchEvent(opEvent);
+  }
+
+  fireBeforeOpEvent(ops: P[], source = false) {
+    const opEvent = new BeforeOpEvent<P>();
     opEvent.ops = ops;
     opEvent.source = source;
     this.dispatchEvent(opEvent);
@@ -202,6 +211,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         }
         this.version = last(ops)!.version + 1;
         const opContents = ops.map((o) => o.content);
+        this.fireBeforeOpEvent(opContents, false);
         for (const o of opContents) {
           this.apply(o, false);
         }
@@ -229,7 +239,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     return p;
   }
 
-  public submitPresence(presence: any) {
+  public submitPresence(presence: Pr) {
     this.localPresence.submit(presence);
   }
 
@@ -257,6 +267,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
       version: 0,
       content: opContent,
     };
+    this.fireBeforeOpEvent([opContent], true);
     const invert = this.apply(opContent, true);
     const pendingOp: PendingOp<P> = {
       op,
@@ -299,31 +310,34 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
       const localOps = this.allPendingOps;
       this.inflightOp = undefined;
       const opsFromServer = res.ops!;
-      let myIndex;
-      for (myIndex = 0; myIndex < opsFromServer.length; myIndex++) {
-        if (opsFromServer[myIndex].id === inflightOp.op.id) {
+      let sourceIndex;
+      for (sourceIndex = 0; sourceIndex < opsFromServer.length; sourceIndex++) {
+        if (opsFromServer[sourceIndex].id === inflightOp.op.id) {
           break;
         }
       }
-      const my = opsFromServer[myIndex];
-      if (!my) {
+      const sourceOp = opsFromServer[sourceIndex];
+      if (!sourceOp) {
         throw new Error('commitOp response error!');
       }
-      const prevOps = opsFromServer.slice(0, myIndex);
-      const afterOps = opsFromServer.slice(myIndex + 1);
+      const prevOps = opsFromServer.slice(0, sourceIndex);
+      const afterOps = opsFromServer.slice(sourceIndex + 1);
       const remoteOpEvent = new RemoteOpEvent<P>();
       remoteOpEvent.prevOps = prevOps;
       remoteOpEvent.afterOps = afterOps;
-      remoteOpEvent.sourceOp = my;
+      remoteOpEvent.sourceOp = sourceOp;
       this.dispatchEvent(remoteOpEvent);
 
       this.version = last(opsFromServer).version + 1;
       if (prevOps.length || afterOps.length) {
         const opForEvents: any[] = [];
 
-        for (const pendingOp of localOps.concat().reverse()) {
+        for (const pendingOp of [...localOps].reverse()) {
           opForEvents.push(pendingOp.invert.content);
-          this.apply(pendingOp.invert.content, false);
+        }
+        for (const o of opsFromServer) {
+          const { content } = o;
+          opForEvents.push(content);
         }
 
         const localOpsCongent = localOps.map((o) => o.op.content);
@@ -343,12 +357,22 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
           pendingOps[i].op.content = newPendingOps[i].content;
         }
 
-        inflightOp.op.content = my.content;
-        inflightOp.op.version = my.version;
+        inflightOp.op.content = sourceOp.content;
+        inflightOp.op.version = sourceOp.version;
+
+        for (const pendingOp of pendingOps) {
+          const { content } = pendingOp.op;
+          opForEvents.push(content);
+        }
+
+        this.fireBeforeOpEvent(opForEvents, false);
+
+        for (const pendingOp of [...localOps].reverse()) {
+          this.apply(pendingOp.invert.content, false);
+        }
 
         for (const o of opsFromServer) {
           const { content, id } = o;
-          opForEvents.push(content);
           if (id === inflightOp.op.id) {
             inflightOp.invert.content = this.apply(content, true);
           } else {
@@ -358,9 +382,9 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
         for (const pendingOp of pendingOps) {
           const { content } = pendingOp.op;
-          opForEvents.push(content);
           pendingOp.invert.content = this.apply(content, true);
         }
+
         this.fireOpEvent(opForEvents, false);
       }
     }

@@ -117,12 +117,16 @@ export class UndoManager<S, P, Pr> {
     popStack: UndoRedoStack<S, P, Pr>,
     pushStack: UndoRedoStack<S, P, Pr>,
   ) {
+    const { doc } = this;
     const pendingOp = popStack.pop()!;
     pushStack.push(pendingOp);
+    doc.fireBeforeOpEvent([pendingOp.op.content], true);
     if (pendingOp.needInvert) {
-      pendingOp.invert.content = this.doc.apply(pendingOp.op.content, true);
+      pendingOp.invert.content = doc.apply(pendingOp.op.content, true);
+    } else {
+      doc.apply(pendingOp.op.content, false);
     }
-    this.doc.submitPendingOp(pendingOp);
+    doc.submitPendingOp(pendingOp);
   }
 
   undo() {

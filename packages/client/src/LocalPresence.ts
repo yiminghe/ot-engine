@@ -19,7 +19,7 @@ export class LocalPresence<S, P, Pr> {
     }
   };
 
-  async submit(value: any) {
+  async submit(value: Pr) {
     const { doc } = this;
     this.value = value;
     if (this.sending) {

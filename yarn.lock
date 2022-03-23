@@ -10517,7 +10517,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ot-engine-client@0.0.5, ot-engine-client@workspace:packages/client":
+"ot-engine-client@0.0.6, ot-engine-client@workspace:packages/client":
   version: 0.0.0-use.local
   resolution: "ot-engine-client@workspace:packages/client"
   dependencies:
@@ -10575,11 +10575,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"ot-engine@0.0.5, ot-engine@workspace:packages/engine":
+"ot-engine@0.0.6, ot-engine@workspace:packages/engine":
   version: 0.0.0-use.local
   resolution: "ot-engine@workspace:packages/engine"
   dependencies:
-    ot-engine-client: 0.0.5
+    ot-engine-client: 0.0.6
     ot-engine-server: 0.0.5
   languageName: unknown
   linkType: soft
@@ -10600,7 +10600,7 @@ __metadata:
     "@yiminghe/react-scripts": 5.x
     express: ^4.14.0
     immer: 9.x
-    ot-engine: 0.0.5
+    ot-engine: 0.0.6
     ot-tree: 1.x
     qs: 6.x
     react: 16.x

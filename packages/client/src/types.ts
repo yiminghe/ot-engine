@@ -9,6 +9,14 @@ export class OpEvent<P> extends Event<'op'> {
   }
 }
 
+export class BeforeOpEvent<P> extends Event<'beforeOp'> {
+  ops: P[] = [];
+  source = false;
+  constructor() {
+    super('beforeOp');
+  }
+}
+
 export class RemoteOpEvent<P> extends Event<'remoteOp'> {
   prevOps?: Op<P>[];
   sourceOp?: Op<P>;

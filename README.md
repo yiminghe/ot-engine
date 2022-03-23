@@ -142,7 +142,12 @@ declare class OpEvent<P> extends Event<'op'> {
     source: boolean;
     constructor();
 }
-export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>]> {
+declare class BeforeOpEvent<P> extends Event<'beforeOp'> {
+    ops: P[];
+    source: boolean;
+    constructor();
+}
+export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>, BeforeOpEvent<P>]> {
     constructor(config: DocConfig<S,P,Pr>);
     canUndo(): boolean;
     canRedo(): boolean;
@@ -152,4 +157,12 @@ export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>]> {
     submitOp(opContent: P): void;
     fetch(): Promise<Snapshot<S>>;
 }
+```
+
+## release workflow
+
+```
+yarn version check -i
+yarn version apply --all
+yarn run pub
 ```
