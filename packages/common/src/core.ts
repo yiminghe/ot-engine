@@ -1,26 +1,30 @@
 export type OTSide = 'left' | 'right';
 
-export type OTType<S = any, P = any> = {
+export type OTType<S, P, Pr> = {
   name: string;
   create?(data: any): S;
-  applyAndInvert?(snapshot: S, op: P, invert: boolean): [S, P | undefined];
+  applyAndInvert?<I extends boolean>(
+    snapshot: S,
+    op: P,
+    invert: I,
+  ): I extends true ? [S, P] : [S, undefined];
   apply?(snapshot: S, op: P): S;
   invert?(op: P): P;
   invertWithDoc?(op: P, snapshot: S): P;
   compose?(op: P, prevOp: P): P | undefined;
   transform(op: P, refOp: P, side: OTSide): P;
-  transformPresence?(presence: any, refOp: P): any;
+  transformPresence?(presence: Pr, refOp: P): Pr;
   serialize?(s: S): any;
   deserialize?(data: any): S;
 };
 
-export interface Op<P = any> {
+export interface Op<P> {
   version: number;
   id: string;
   content: P;
 }
 
-export interface Snapshot<P = any> {
+export interface Snapshot<P> {
   version: number;
   content: P;
 }
@@ -30,8 +34,7 @@ export type SnapshotAndOps<S, P> = {
   ops: Op<P>[];
 };
 
-export interface Presence {
+export interface Presence<P> {
   version: number;
-  clientId: string;
-  content?: any;
+  content?: P;
 }

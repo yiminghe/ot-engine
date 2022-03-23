@@ -1,11 +1,4 @@
-import {
-  ExpandInfo,
-  JsonTreeNode,
-  TreeNode,
-  ViewTreeNode,
-  TreeData,
-  Path,
-} from './types';
+import { ExpandInfo, TreeNode, ViewTreeNode, TreeData, Path } from './types';
 import { utils as pathUtils } from 'ot-tree';
 
 export function last<O = any>(args: O[]) {
@@ -29,7 +22,7 @@ export function traverse(model: TreeNode, fn: (node: TreeNode) => boolean) {
 export function getIdsByDescendentsAndSelf(root: TreeNode) {
   const ret: string[] = [];
   traverse(root, (n: TreeNode) => {
-    ret.push(n.id);
+    ret.push(n.data.id);
     return false;
   });
   return ret;
@@ -40,7 +33,7 @@ export function transformLowerSiblingCountsToPath(
   treeData: TreeNode[],
 ) {
   const path: Path = [];
-  let parent: TreeNode = { id: 'v', data: { name: 'v' }, children: treeData };
+  let parent: TreeNode = { data: { name: 'v', id: 'v' }, children: treeData };
   for (const i of lowerSiblings) {
     const n = parent.children.length - i - 1;
     path.push(n);
@@ -66,8 +59,7 @@ export function getParentsAndSelfAtNodePath(
   let n = 0;
   const ret: TreeNode[] = [];
   let parent: TreeNode | undefined = {
-    id: '',
-    data: { name: '' },
+    data: { name: '', id: '' },
     children: tree,
   };
   for (const i of path) {
@@ -91,33 +83,6 @@ export function uuidv4() {
   return `${++uid}`;
 }
 
-export function transformToTree(treeData: JsonTreeNode[]): TreeNode[] {
-  const ret: TreeNode[] = [];
-  for (const node of treeData) {
-    const newNode: TreeNode = {
-      data: node.data,
-      id: uuidv4(),
-      children: [],
-    };
-    newNode.children = transformToTree(node.children);
-    ret.push(newNode);
-  }
-  return ret;
-}
-
-export function transformToJsonTree(treeData: TreeNode[]): JsonTreeNode[] {
-  const ret: JsonTreeNode[] = [];
-  for (const node of treeData) {
-    const newNode: JsonTreeNode = {
-      data: node.data,
-      children: [],
-    };
-    newNode.children = transformToJsonTree(node.children);
-    ret.push(newNode);
-  }
-  return ret;
-}
-
 export function transformToViewTree(
   expand: ExpandInfo,
   treeData: TreeNode[],
@@ -127,7 +92,7 @@ export function transformToViewTree(
     const newNode: ViewTreeNode = {
       ...node,
     };
-    if (expand[node.id]) {
+    if (expand[node.data.id]) {
       newNode.expanded = true;
     }
     newNode.children = transformToViewTree(expand, node.children);
@@ -138,7 +103,7 @@ export function transformToViewTree(
 
 function findIndexById(treeData: TreeNode[], id: string) {
   for (let i = 0, l = treeData.length; i < l; i++) {
-    if (treeData[i].id === id) {
+    if (treeData[i].data.id === id) {
       return i;
     }
   }
@@ -161,13 +126,13 @@ export function getIdPathFromPath(path: Path, treeData: TreeNode[]): string[] {
     [];
   }
   const ret = [];
-  let parent: TreeNode = { id: 'v', data: { name: 'v' }, children: treeData };
+  let parent: TreeNode = { data: { id: 'v', name: 'v' }, children: treeData };
   for (const i of path) {
     parent = parent.children[i];
     if (!parent) {
       return ret;
     }
-    ret.push(parent.id);
+    ret.push(parent.data.id);
   }
   return ret;
 }

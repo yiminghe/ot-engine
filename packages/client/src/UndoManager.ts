@@ -2,20 +2,20 @@ import { Op, transformType, last } from 'ot-engine-common';
 import { Doc } from './doc';
 import { PendingOp, RemoteOpEvent } from './types';
 
-export interface UndoRedoItem {
-  op: Op;
+export interface UndoRedoItem<P> {
+  op: Op<P>;
   accepted: boolean;
-  invert: Op;
+  invert: Op<P>;
   afterOps: any[];
 }
 
-export class UndoRedoStack {
-  stack: UndoRedoItem[] = [];
+export class UndoRedoStack<S, P, Pr> {
+  stack: UndoRedoItem<P>[] = [];
   nextAcceptedIndex = 0;
 
-  constructor(private doc: Doc) {}
+  constructor(private doc: Doc<S, P, Pr>) {}
 
-  onRemoteOp({ prevOps, sourceOp, afterOps }: RemoteOpEvent) {
+  onRemoteOp({ prevOps, sourceOp, afterOps }: RemoteOpEvent<P>) {
     const { stack } = this;
     let { nextAcceptedIndex } = this;
     if (nextAcceptedIndex && prevOps) {
@@ -34,7 +34,7 @@ export class UndoRedoStack {
     }
   }
 
-  push(item: PendingOp) {
+  push(item: PendingOp<P>) {
     this.stack.push({
       ...item,
       accepted: false,
@@ -56,7 +56,7 @@ export class UndoRedoStack {
     }
   }
 
-  pop(): PendingOp & { needInvert: boolean } {
+  pop(): PendingOp<P> & { needInvert: boolean } {
     this.reduceNextAcceptedIndex();
     const item = this.stack.pop()!;
     let needInvert = false;
@@ -85,22 +85,22 @@ export class UndoRedoStack {
     this.stack = [];
   }
 }
-export class UndoManager {
-  undoStack: UndoRedoStack;
-  redoStack: UndoRedoStack;
+export class UndoManager<S, P, Pr> {
+  undoStack: UndoRedoStack<S, P, Pr>;
+  redoStack: UndoRedoStack<S, P, Pr>;
 
-  constructor(private doc: Doc) {
+  constructor(private doc: Doc<S, P, Pr>) {
     doc.addEventListener('remoteOp', this.onRemoteOp);
     this.undoStack = new UndoRedoStack(doc);
     this.redoStack = new UndoRedoStack(doc);
   }
 
-  onRemoteOp = (e: RemoteOpEvent) => {
+  onRemoteOp = (e: RemoteOpEvent<P>) => {
     this.undoStack.onRemoteOp(e);
     this.redoStack.onRemoteOp(e);
   };
 
-  submitOp(pendingOp: PendingOp) {
+  submitOp(pendingOp: PendingOp<P>) {
     this.undoStack.push(pendingOp);
     this.redoStack.clear();
   }
@@ -113,7 +113,10 @@ export class UndoManager {
     return !!this.redoStack.length;
   }
 
-  undoRedo(popStack: UndoRedoStack, pushStack: UndoRedoStack) {
+  undoRedo(
+    popStack: UndoRedoStack<S, P, Pr>,
+    pushStack: UndoRedoStack<S, P, Pr>,
+  ) {
     const pendingOp = popStack.pop()!;
     pushStack.push(pendingOp);
     if (pendingOp.needInvert) {

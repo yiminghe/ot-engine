@@ -11,7 +11,7 @@ import { MemoryDB } from './MemoryDB';
 export interface ServerConfig {
   saveInterval?: number;
   db?: DB;
-  pubSub?: PubSub;
+  pubSub?: PubSub<any>;
 }
 
 type ServerConfig_ = Required<ServerConfig>;
@@ -19,7 +19,7 @@ type ServerConfig_ = Required<ServerConfig>;
 export class Server {
   config: ServerConfig_;
 
-  agentsMap: Map<string, Set<Agent>> = new Map();
+  agentsMap: Map<string, Set<Agent<any, any, any, any>>> = new Map();
 
   constructor(config: ServerConfig = {}) {
     config = this.config = {
@@ -40,7 +40,7 @@ export class Server {
     return this.config.pubSub;
   }
 
-  addAgent(agent: Agent) {
+  addAgent<S, P, Pr, Custom>(agent: Agent<S, P, Pr, Custom>) {
     const { agentsMap } = this;
     const { subscribeId } = agent;
     let agents = agentsMap.get(subscribeId);
@@ -51,14 +51,17 @@ export class Server {
     agents.add(agent);
   }
 
-  broadcast(
-    from: Agent,
-    message: RemoteOpResponse | PresenceIO | Omit<DeleteDocResponse, 'seq'>,
+  broadcast<S, P, Pr, Custom>(
+    from: Agent<S, P, Pr, Custom>,
+    message:
+      | RemoteOpResponse<P>
+      | PresenceIO<Pr>
+      | Omit<DeleteDocResponse, 'seq'>,
   ) {
     this.pubSub.publish(from.subscribeId, message);
   }
 
-  deleteAgent(agent: Agent) {
+  deleteAgent<S, P, Pr, Custom>(agent: Agent<S, P, Pr, Custom>) {
     const { agentsMap } = this;
     const { subscribeId } = agent;
     const agents = agentsMap.get(subscribeId)!;
@@ -69,10 +72,10 @@ export class Server {
     if (agent.clientId) {
       this.broadcast(agent, {
         type: 'presence',
+        clientId: agent.clientId,
         presence: {
           version: 0,
-          content: null,
-          clientId: agent.clientId,
+          content: undefined,
         },
       });
     }
@@ -89,10 +92,10 @@ export class Server {
     }
   }
 
-  public handleStream(config: AgentConfig) {
+  public handleStream<S, P, Pr, Custom>(config: AgentConfig<S, P, Pr, Custom>) {
     const agent = new Agent(this, config);
     this.addAgent(agent);
     agent.open();
-    this.printAgentSize();
+    return agent;
   }
 }

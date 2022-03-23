@@ -26,7 +26,7 @@ open: http://localhost:3000/
 ## ot type definition
 
 ```ts
-export type OTType<S = any, P = any> = {
+export type OTType<S, P,Pr> = {
   name: string;
   create?(data: any): S;
   applyAndInvert?(snapshot: S, op: P, invert: boolean): [S, P | undefined];
@@ -34,7 +34,7 @@ export type OTType<S = any, P = any> = {
   invert?(op: P): P;
   invertWithDoc?(op: P, snapshot: S): P;
   transform(op: P, refOp: P, side: OTSide): P;
-  transformPresence?(presence: any, refOp: P): any;
+  transformPresence?(presence: Pr, refOp: P): Pr;
   serialize?(s: S): any;
   deserialize?(data: any): S;
 };
@@ -43,15 +43,15 @@ export type OTType<S = any, P = any> = {
 ## ot-engine/server
 
 ```ts
-export interface Op<P = any> {
+export interface Op<P> {
   version: number;
   id: string;
   content: P;
 }
 
-export interface Snapshot<P = any> {
+export interface Snapshot<S> {
   version: number;
-  content: P;
+  content: S;
 }
 
 export type SnapshotAndOps<S, P> = {
@@ -60,6 +60,7 @@ export type SnapshotAndOps<S, P> = {
 };
 
 export interface GetOpsParams {
+  custom?: any;
   collection: string;
   docId: string;
   fromVersion: number;
@@ -67,19 +68,22 @@ export interface GetOpsParams {
 }
 
 export interface GetSnapshotParams {
+  custom?: any;
   collection: string;
   docId: string;
   version?: number;
   toVersion?: number;
 }
 
-export interface CommitOpParams {
+export interface CommitOpParams<P> {
+  custom?: any;
   collection: string;
   docId: string;
-  op: Op;
+  op: Op<P>;
 }
 
-export interface SaveSnapshotParams<S = any> {
+export interface SaveSnapshotParams<S> {
+  custom?: any;
   collection: string;
   docId: string;
   snapshot: {
@@ -89,10 +93,10 @@ export interface SaveSnapshotParams<S = any> {
 }
 
 export interface DB {
-    getOps<P = unknown>(params: GetOpsParams): Promise<Op<P>[]>;
-    getSnapshot<S = unknown, P = unknown>(params: GetSnapshotParams): Promise<SnapshotAndOps<S, P> | undefined>;
-    commitOp(params: CommitOpParams): Promise<void>;
-    saveSnapshot(params: SaveSnapshotParams): Promise<void>;
+    getOps<P>(params: GetOpsParams): Promise<Op<P>[]>;
+    getSnapshot<S, P>(params: GetSnapshotParams): Promise<SnapshotAndOps<S, P> | undefined>;
+    commitOp<P>(params: CommitOpParams<P>): Promise<void>;
+    saveSnapshot<S>(params: SaveSnapshotParams<S>): Promise<void>;
 }
 export interface PubSubData {
     data: any;
@@ -107,43 +111,45 @@ export interface ServerConfig {
     db?: DB;
     pubSub?: PubSub;
 }
-export interface AgentConfig {
+export interface AgentConfig<S,P,Pr,Custom> {
+  /** passed to db */
+  custom?:Custom;
   stream: Duplex;
   collection: string;
   docId: string;
   clientId: string;
-  otType: OTType;
+  otType: OTType<S,P,Pr>;
 }
 export declare class Server {
     constructor(params?: ServerConfig);
-    handleStream(config: AgentConfig): void;
+    handleStream<S,P,Pr,Custom>(config: AgentConfig<S,P,Pr,Custom>): void;
 }
 ```
 
 ## ot-engine/client
 
 ```ts
-interface DocConfig {
+interface DocConfig<S,P,Pr> {
     socket: WebSocket;
-    otType: OTType;
+    otType: OTType<S,P,Pr>;
     clientId: string;
     undoStackLimit?: number;
     cacheServerOpsLimit?: number;
 }
-import { Event } from 'ts-event-target';
-declare class OpEvent extends Event<'op'> {
-    ops: any[];
+import { Event,EventTarget } from 'ts-event-target';
+declare class OpEvent<P> extends Event<'op'> {
+    ops: P[];
     source: boolean;
     constructor();
 }
-export declare class Doc extends EventTarget<[OpEvent]> {
-    constructor(config: DocConfig);
+export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>]> {
+    constructor(config: DocConfig<S,P,Pr>);
     canUndo(): boolean;
     canRedo(): boolean;
     undo(): void;
     redo(): void;
     destryoy(): void;
-    submitOp(opContent: any): void;
-    fetch(): Promise<Snapshot<any>>;
+    submitOp(opContent: P): void;
+    fetch(): Promise<Snapshot<S>>;
 }
 ```

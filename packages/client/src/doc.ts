@@ -23,50 +23,50 @@ import {
 } from './types';
 import { UndoManager } from './UndoManager';
 
-interface DocConfig {
+interface DocConfig<S, P, Pr> {
   clientId: string;
   socket: WebSocket;
-  otType: OTType;
+  otType: OTType<S, P, Pr>;
   undoStackLimit?: number;
   cacheServerOpsLimit?: number;
 }
 
-export class Doc extends EventTarget<
+export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   [
-    OpEvent,
+    OpEvent<P>,
     NoPendingEvent,
-    RemoteOpEvent,
+    RemoteOpEvent<P>,
     RemoteDeleteDocEvent,
-    RemotePresenceEvent,
+    RemotePresenceEvent<Pr>,
   ]
 > {
   socket: WebSocket;
 
-  config: Required<DocConfig>;
+  config: Required<DocConfig<S, P, Pr>>;
 
   seq = 0;
 
   uid = 0;
 
-  undoManager: UndoManager;
+  undoManager: UndoManager<S, P, Pr>;
 
-  remotePresence: RemotePresence;
+  remotePresence: RemotePresence<S, P, Pr>;
 
-  localPresence: LocalPresence;
+  localPresence: LocalPresence<S, P, Pr>;
 
   closed = false;
 
-  data: any;
+  data: S | undefined;
 
   version = 1;
 
   callMap: Map<number, (arg: any) => void> = new Map();
 
-  pendingOps: PendingOp[] = [];
+  pendingOps: PendingOp<P>[] = [];
 
-  inflightOp: PendingOp | undefined;
+  inflightOp: PendingOp<P> | undefined;
 
-  constructor(config: DocConfig) {
+  constructor(config: DocConfig<S, P, Pr>) {
     super();
     this.config = {
       ...config,
@@ -75,9 +75,9 @@ export class Doc extends EventTarget<
     };
     this.bindToSocket(config.socket);
     this.socket = config.socket;
-    this.undoManager = new UndoManager(this);
-    this.remotePresence = new RemotePresence(this);
-    this.localPresence = new LocalPresence(this);
+    this.undoManager = new UndoManager<S, P, Pr>(this);
+    this.remotePresence = new RemotePresence<S, P, Pr>(this);
+    this.localPresence = new LocalPresence<S, P, Pr>(this);
   }
 
   getUuid() {
@@ -111,8 +111,8 @@ export class Doc extends EventTarget<
     return ret[1];
   }
 
-  fireOpEvent(ops: any[], source = false) {
-    const opEvent = new OpEvent();
+  fireOpEvent(ops: P[], source = false) {
+    const opEvent = new OpEvent<P>();
     opEvent.ops = ops;
     opEvent.source = source;
     this.dispatchEvent(opEvent);
@@ -149,9 +149,9 @@ export class Doc extends EventTarget<
     socket.onclose = null;
   }
 
-  send(request: ClientRequest) {
+  send(request: ClientRequest<P, Pr>) {
     const seq = ++this.seq;
-    const promise = new Promise<ClientResponse>((resolve, reject) => {
+    const promise = new Promise<ClientResponse<S, P, Pr>>((resolve, reject) => {
       this.callMap.set(seq, (arg: any) => {
         this.callMap.delete(seq);
         if (arg.error) {
@@ -173,7 +173,7 @@ export class Doc extends EventTarget<
     return promise;
   }
 
-  async handleResponse(response: ClientResponse) {
+  async handleResponse(response: ClientResponse<S, P, Pr>) {
     if (response.type === 'deleteDoc') {
       const res: Omit<DeleteDocResponse, 'seq'> = response;
       if (!('seq' in res)) {
@@ -193,7 +193,7 @@ export class Doc extends EventTarget<
             type: 'getOps',
             fromVersion: this.version,
             seq: 0,
-          })) as GetOpsResponse;
+          })) as GetOpsResponse<P>;
           if (!this.inflightOp && getOps.ops) {
             ops = getOps.ops;
           } else {
@@ -205,7 +205,7 @@ export class Doc extends EventTarget<
         for (const o of opContents) {
           this.apply(o, false);
         }
-        const remoteOpEvent = new RemoteOpEvent();
+        const remoteOpEvent = new RemoteOpEvent<P>();
         remoteOpEvent.afterOps = ops;
         this.dispatchEvent(remoteOpEvent);
         this.fireOpEvent(opContents, false);
@@ -245,20 +245,20 @@ export class Doc extends EventTarget<
     });
   }
 
-  submitPendingOp(op: PendingOp) {
+  submitPendingOp(op: PendingOp<P>) {
     this.pendingOps.push(op);
-    this.fireOpEvent([op.op], true);
+    this.fireOpEvent([op.op.content], true);
     this.checkSend();
   }
 
-  public submitOp(opContent: any) {
-    const op: Op = {
+  public submitOp(opContent: P) {
+    const op: Op<P> = {
       id: this.getUuid(),
       version: 0,
       content: opContent,
     };
     const invert = this.apply(opContent, true);
-    const pendingOp: PendingOp = {
+    const pendingOp: PendingOp<P> = {
       op,
       invert: {
         version: 0,
@@ -292,7 +292,7 @@ export class Doc extends EventTarget<
     this.dispatchEvent(noPendingEvent);
   }
 
-  handleCommitOpResponse(res: CommitOpResponse) {
+  handleCommitOpResponse(res: CommitOpResponse<P>) {
     if (res.ops?.length) {
       const { otType, pendingOps } = this;
       const inflightOp = this.inflightOp!;
@@ -311,7 +311,7 @@ export class Doc extends EventTarget<
       }
       const prevOps = opsFromServer.slice(0, myIndex);
       const afterOps = opsFromServer.slice(myIndex + 1);
-      const remoteOpEvent = new RemoteOpEvent();
+      const remoteOpEvent = new RemoteOpEvent<P>();
       remoteOpEvent.prevOps = prevOps;
       remoteOpEvent.afterOps = afterOps;
       remoteOpEvent.sourceOp = my;

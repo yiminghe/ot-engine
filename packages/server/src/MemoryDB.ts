@@ -22,8 +22,8 @@ function checkDeleted(doc: DBDoc | undefined) {
 
 export class DBDoc {
   deleted = false;
-  ops: Map<number, Op> = new Map();
-  snapshots: Map<number, Snapshot> = new Map();
+  ops: Map<number, Op<unknown>> = new Map();
+  snapshots: Map<number, Snapshot<unknown>> = new Map();
 }
 
 interface DocInfo {
@@ -37,14 +37,14 @@ function getDocKey({ docId, collection }: DocInfo) {
 export class MemoryDB implements DB {
   docs: Map<string, DBDoc> = new Map();
 
-  async getOps(params: GetOpsParams) {
+  async getOps<P>(params: GetOpsParams) {
     const doc = this.docs.get(getDocKey(params));
-    const ops: Op[] = [];
+    const ops: Op<P>[] = [];
     if (doc) {
       checkDeleted(doc);
       const toVersion = params.toVersion ?? Infinity;
       for (let i = params.fromVersion; i <= toVersion; i++) {
-        const op = doc.ops.get(i);
+        const op = doc.ops.get(i) as Op<P>;
         if (op) {
           ops.push(op);
         } else {
@@ -55,20 +55,20 @@ export class MemoryDB implements DB {
     }
     return ops;
   }
-  async getSnapshot(params: GetSnapshotParams) {
+  async getSnapshot<S, P>(params: GetSnapshotParams) {
     const doc = this.docs.get(getDocKey(params));
 
     if (doc) {
       checkDeleted(doc);
       const { snapshots } = doc;
       if (params.version === undefined) {
-        const snapshot = last(Array.from(snapshots.values()));
+        const snapshot = last(Array.from(snapshots.values())) as Snapshot<S>;
         if (!snapshot) {
           return undefined;
         }
         return {
           snapshot,
-          ops: await this.getOps({
+          ops: await this.getOps<P>({
             docId: params.docId,
             custom: params.custom,
             collection: params.collection,
@@ -81,8 +81,8 @@ export class MemoryDB implements DB {
           version--;
         }
         return {
-          snapshot: snapshots.get(version)!,
-          ops: await this.getOps({
+          snapshot: snapshots.get(version)! as Snapshot<S>,
+          ops: await this.getOps<P>({
             docId: params.docId,
             custom: params.custom,
             collection: params.collection,
@@ -105,14 +105,14 @@ export class MemoryDB implements DB {
     }
     return doc;
   }
-  async commitOp(params: CommitOpParams) {
+  async commitOp<P>(params: CommitOpParams<P>) {
     const { ops } = this.getOrCreateDoc(params);
     if (ops.has(params.op.version)) {
       throw new Error('op version conflict: ' + params.op.version);
     }
     ops.set(params.op.version, params.op);
   }
-  async saveSnapshot(params: SaveSnapshotParams) {
+  async saveSnapshot<S>(params: SaveSnapshotParams<S>) {
     const { snapshot } = params;
     this.getOrCreateDoc(params).snapshots.set(snapshot.version, snapshot);
   }

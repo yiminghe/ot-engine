@@ -12,9 +12,10 @@ interface BaseRequest {
   seq: number;
 }
 
-export interface PresenceIO {
+export interface PresenceIO<Pr> {
   type: 'presence';
-  presence: Presence;
+  clientId: string;
+  presence: Presence<Pr>;
 }
 
 export interface GetSnapshotRequest
@@ -35,25 +36,25 @@ export interface GetOpsRequest
   type: 'getOps';
 }
 
-export interface CommitOpRequest
-  extends Omit<CommitOpParams, AgentInfoKeys>,
+export interface CommitOpRequest<P>
+  extends Omit<CommitOpParams<P>, AgentInfoKeys>,
     BaseRequest {
   type: 'commitOp';
 }
 
-export type ClientRequest =
+export type ClientRequest<P, Pr> =
   | DeleteDocRequest
-  | PresenceIO
+  | PresenceIO<Pr>
   | GetSnapshotRequest
   | GetOpsRequest
-  | CommitOpRequest;
+  | CommitOpRequest<P>;
 
 interface BaseResponse {
   seq: number;
   error?: any;
 }
 
-export interface GetSnapshotResponse<S = any, P = any> extends BaseResponse {
+export interface GetSnapshotResponse<S, P> extends BaseResponse {
   type: 'getSnapshot';
   snapshotAndOps?: SnapshotAndOps<S, P>;
 }
@@ -62,25 +63,25 @@ export interface DeleteDocResponse extends BaseResponse {
   type: 'deleteDoc';
 }
 
-export interface GetOpsResponse<P = any> extends BaseResponse {
+export interface GetOpsResponse<P> extends BaseResponse {
   type: 'getOps';
   ops?: Op<P>[];
 }
 
-export interface CommitOpResponse<P = any> extends BaseResponse {
+export interface CommitOpResponse<P> extends BaseResponse {
   type: 'commitOp';
   ops?: Op<P>[];
 }
 
-export interface RemoteOpResponse<P = any> {
+export interface RemoteOpResponse<P> {
   type: 'remoteOp';
   clientId: string;
   ops: Op<P>[];
 }
 
-export type ClientResponse<S = any, P = any> =
+export type ClientResponse<S, P, Pr> =
   | DeleteDocResponse
-  | PresenceIO
+  | PresenceIO<Pr>
   | CommitOpResponse<P>
   | GetOpsResponse<P>
   | GetSnapshotResponse<S, P>
@@ -98,11 +99,11 @@ export interface GetSnapshotParams extends AgentInfo {
   toVersion?: number;
 }
 
-export interface CommitOpParams extends AgentInfo {
-  op: Op;
+export interface CommitOpParams<P> extends AgentInfo {
+  op: Op<P>;
 }
 
-export interface SaveSnapshotParams<S = any> extends AgentInfo {
+export interface SaveSnapshotParams<S> extends AgentInfo {
   snapshot: {
     content: S;
     version: number;

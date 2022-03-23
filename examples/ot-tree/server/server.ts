@@ -17,7 +17,7 @@ async function initDoc(collection: string, docId: string) {
     snapshot: {
       content: [
         {
-          data: { name: 'root' },
+          data: { name: 'root', id: 'root' },
           children: [],
         },
       ],
@@ -45,13 +45,17 @@ function startServer() {
     }
     await p;
     const stream = new WebSocketJSONStream(ws);
-    otServer.handleStream({
+    const agent = otServer.handleStream({
       stream,
       collection: params.collection,
       docId: params.docId,
       clientId: params.clientId,
       otType: type,
     });
+    if (Math.random() > 2) {
+      console.log(agent);
+    }
+    otServer.printAgentSize();
   });
 
   server.listen(8080);

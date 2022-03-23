@@ -9,21 +9,21 @@ import type {
 } from 'ot-engine-common';
 
 export interface DB {
-  getOps<P = unknown>(params: GetOpsParams): Promise<Op<P>[]>;
-  getSnapshot<S = unknown, P = unknown>(
+  getOps<P>(params: GetOpsParams): Promise<Op<P>[]>;
+  getSnapshot<S, P>(
     params: GetSnapshotParams,
   ): Promise<SnapshotAndOps<S, P> | undefined>;
-  commitOp(params: CommitOpParams): Promise<void>;
-  saveSnapshot(params: SaveSnapshotParams): Promise<void>;
+  commitOp<P>(params: CommitOpParams<P>): Promise<void>;
+  saveSnapshot<S>(params: SaveSnapshotParams<S>): Promise<void>;
   deleteDoc(params: DeleteDocParams): Promise<void>;
 }
 
-export interface PubSubData {
-  data: any;
+export interface PubSubData<D> {
+  data: D | undefined;
 }
 
-export interface PubSub {
-  subscribe(channel: string, callback: (d: PubSubData) => void): void;
-  publish(channel: string, data: any): void;
-  unsubscribe(channel: string, callback: (d: PubSubData) => void): void;
+export interface PubSub<D> {
+  subscribe(channel: string, callback: (d: PubSubData<D>) => void): void;
+  publish(channel: string, data: D): void;
+  unsubscribe(channel: string, callback: (d: PubSubData<D>) => void): void;
 }

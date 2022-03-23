@@ -1,6 +1,6 @@
 {
   "name": "ot-engine",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",
@@ -9,8 +9,8 @@
     "url": "git@github.com:yiminghe/ot-engine.git"
   },
   "dependencies": {
-    "ot-engine-client": "0.0.4",
-    "ot-engine-server": "0.0.4"
+    "ot-engine-client": "0.0.5",
+    "ot-engine-server": "0.0.5"
   },
   "scripts": {
     "pub": "npm publish"

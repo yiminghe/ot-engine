@@ -107,7 +107,7 @@ export const app = {
       if (parents.length) {
         const map: Record<string, true> = {};
         for (const p of parents) {
-          map[p.id] = true;
+          map[p.data.id] = true;
         }
         dispatch.app.updateExpand(map);
       }
@@ -122,7 +122,7 @@ export const app = {
       const parent = getNodeAtPath(path.slice(0, -1), treeData);
       if (parent) {
         dispatch.app.updateExpand({
-          [parent.id]: true,
+          [parent.data.id]: true,
         });
       }
 
@@ -134,8 +134,8 @@ export const app = {
           type: 'insert_node',
           path,
           newNode: {
-            id,
             data: {
+              id,
               name: text, //`${text}_${id}`.slice(0, 10),
             },
             children: [],

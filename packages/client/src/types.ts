@@ -1,18 +1,18 @@
 import { Event } from 'ts-event-target';
 import { Op, Presence } from 'ot-engine-common';
 
-export class OpEvent extends Event<'op'> {
-  ops: any[] = [];
+export class OpEvent<P> extends Event<'op'> {
+  ops: P[] = [];
   source = false;
   constructor() {
     super('op');
   }
 }
 
-export class RemoteOpEvent extends Event<'remoteOp'> {
-  prevOps?: Op[];
-  sourceOp?: Op;
-  afterOps?: Op[];
+export class RemoteOpEvent<P> extends Event<'remoteOp'> {
+  prevOps?: Op<P>[];
+  sourceOp?: Op<P>;
+  afterOps?: Op<P>[];
   constructor() {
     super('remoteOp');
   }
@@ -24,8 +24,8 @@ export class RemoteDeleteDocEvent extends Event<'remoteDeleteDoc'> {
   }
 }
 
-export class RemotePresenceEvent extends Event<'remotePresence'> {
-  changed: Map<string, any | null> = new Map();
+export class RemotePresenceEvent<Pr> extends Event<'remotePresence'> {
+  changed: Map<string, Pr | undefined> = new Map();
   constructor() {
     super('remotePresence');
   }
@@ -37,17 +37,17 @@ export class NoPendingEvent extends Event<'noPending'> {
   }
 }
 
-export interface UndoItem {
-  op: Op;
-  invert: any;
+export interface UndoItem<P> {
+  op: Op<P>;
+  invert: Op<P>;
 }
 
-export interface PresenceItem {
-  pending?: Presence;
-  normal?: Presence;
+export interface PresenceItem<P> {
+  pending?: Presence<P>;
+  normal?: Presence<P>;
 }
 
-export interface PendingOp {
-  op: Op;
-  invert: Op;
+export interface PendingOp<P> {
+  op: Op<P>;
+  invert: Op<P>;
 }

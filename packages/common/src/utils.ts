@@ -1,19 +1,23 @@
 import type { OTSide, OTType } from './core';
 
-export function transformType(op: any[], refOps: any[], otType: OTType) {
+export function transformType<S, P, Pr>(
+  op: P[],
+  refOps: P[],
+  otType: OTType<S, P, Pr>,
+) {
   return transform(op, refOps, 'left', otType.transform);
 }
 
-export function applyAndInvert(
-  snapshot: any,
-  op: any,
-  invert: boolean,
-  otType: OTType,
-) {
+export function applyAndInvert<S, P, Pr, I extends boolean>(
+  snapshot: S,
+  op: P,
+  invert: I,
+  otType: OTType<S, P, Pr>,
+): I extends true ? [S, P] : [S, undefined] {
   if (otType.applyAndInvert) {
     return otType.applyAndInvert(snapshot, op, invert);
   }
-  const ret = [];
+  const ret: [S, P | undefined] = [] as any;
   if (invert) {
     if (otType.invertWithDoc) {
       ret[1] = otType.invertWithDoc(op, snapshot);
@@ -27,13 +31,13 @@ export function applyAndInvert(
     throw new Error('lack apply in otType: ' + otType.name);
   }
   ret[0] = otType.apply(snapshot, op);
-  return ret;
+  return ret as any;
 }
 
-export function transformPresence(
-  presence: any,
-  refOps: any[],
-  otType: OTType,
+export function transformPresence<S, P, Pr>(
+  presence: Pr,
+  refOps: P[],
+  otType: OTType<S, P, Pr>,
 ) {
   const { transformPresence } = otType;
   if (transformPresence) {

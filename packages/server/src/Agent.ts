@@ -10,22 +10,26 @@ import {
   RemoteOpResponse,
   applyAndInvert,
   OTError,
+  PresenceIO,
 } from 'ot-engine-common';
 import { PubSubData } from './types';
 
-export interface AgentConfig {
-  custom?: any;
+export interface AgentConfig<S, P, Pr, Custom> {
+  custom?: Custom;
   stream: Duplex;
   collection: string;
   docId: string;
   clientId: string;
-  otType: OTType;
+  otType: OTType<S, P, Pr>;
 }
 
-export class Agent {
+export class Agent<S, P, Pr, Custom> {
   closed = false;
 
-  constructor(public server: Server, private config: AgentConfig) {}
+  constructor(
+    public server: Server,
+    private config: AgentConfig<S, P, Pr, Custom>,
+  ) {}
 
   get custom() {
     return this.config.custom;
@@ -71,12 +75,12 @@ export class Agent {
     return `${this.collection}_${this.docId}`;
   }
 
-  onSubscribe = (e: PubSubData) => {
+  onSubscribe = (e: PubSubData<RemoteOpResponse<P> | PresenceIO<Pr>>) => {
     if (this.closed) {
       return;
     }
-    const data: RemoteOpResponse = e.data;
-    if (data.clientId === this.clientId) {
+    const { data } = e;
+    if (!data || data.clientId === this.clientId) {
       return;
     }
     this.send(data);
@@ -97,11 +101,11 @@ export class Agent {
     return transformType([op], prevOps, this.otType)[0][0];
   }
 
-  send(message: ClientResponse) {
+  send(message: ClientResponse<S, P, Pr>) {
     this.stream.write(message);
   }
 
-  async checkAndSaveSnapshot(op: Op) {
+  async checkAndSaveSnapshot(op: Op<P>) {
     const { server, otType } = this;
     if (op.version % server.config.saveInterval === 0) {
       const snapshotAndOps = await server.db.getSnapshot({
@@ -129,17 +133,17 @@ export class Agent {
     }
   }
 
-  async handleCommitOpRequest(request: CommitOpRequest) {
+  async handleCommitOpRequest(request: CommitOpRequest<P>) {
     let ok = false;
-    let sendOps: Op[] = [];
+    let sendOps: Op<P>[] = [];
     const responseInfo = {
       type: request.type,
       seq: request.seq,
     };
     const { server, agentInfo } = this;
-    let newOp: Op = undefined!;
+    let newOp: Op<P> = undefined!;
     while (!ok) {
-      const ops = await server.db.getOps({
+      const ops = await server.db.getOps<P>({
         ...agentInfo,
         fromVersion: request.op.version,
       });
@@ -192,7 +196,7 @@ export class Agent {
     this.checkAndSaveSnapshot(newOp);
   }
 
-  handleMessage = async (request: ClientRequest) => {
+  handleMessage = async (request: ClientRequest<P, Pr>) => {
     console.log('server onmessage', request);
     if (this.closed) {
       return;
@@ -222,7 +226,6 @@ export class Agent {
         type: 'deleteDoc',
       });
     } else if (request.type === 'presence') {
-      request.presence.clientId = this.clientId;
       server.broadcast(this, request);
     } else if (request.type === 'getOps') {
       const responseInfo = {
@@ -231,7 +234,7 @@ export class Agent {
       };
       let ops;
       try {
-        ops = await db.getOps({
+        ops = await db.getOps<P>({
           ...agentInfo,
           ...request,
         });
@@ -244,7 +247,7 @@ export class Agent {
       }
       this.send({
         ...responseInfo,
-        ops: ops,
+        ops,
       });
     } else if (request.type === 'getSnapshot') {
       const responseInfo = {
@@ -253,7 +256,7 @@ export class Agent {
       };
       let snapshotAndOps;
       try {
-        snapshotAndOps = await db.getSnapshot({
+        snapshotAndOps = await db.getSnapshot<S, P>({
           ...request,
           ...agentInfo,
         });

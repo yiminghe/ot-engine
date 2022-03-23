@@ -56,7 +56,7 @@ export function App() {
       <div style={{ overflow: 'auto', height: 440 }}>
         <SortableTree
           treeData={transformToViewTree(app.expand, model.treeData)}
-          getNodeKey={({ node }: any) => node.id}
+          getNodeKey={({ node }: any) => node.data.id}
           onChange={noop}
           onMoveNode={(arg: any) => {
             dispatch.app.moveNode(arg);
@@ -66,7 +66,7 @@ export function App() {
           }}
           onVisibilityToggle={(arg: any) => {
             dispatch.app.updateExpand({
-              [arg.node.id]: arg.expanded,
+              [arg.node.data.id]: arg.expanded,
             });
           }}
           generateNodeProps={({

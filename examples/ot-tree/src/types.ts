@@ -8,25 +8,19 @@ import {
 } from 'ot-tree';
 
 type BaseTreeNode = {
-  data: { name: string };
+  data: { name: string; id: string };
 };
 
 export type TreeNode = OtTreeNode &
   BaseTreeNode & {
-    id: string;
     children: TreeNode[];
   };
 
 export type Path = OtPath;
 
-export type JsonTreeNode = BaseTreeNode & {
-  children: JsonTreeNode[];
-};
-
 export type TreeData = TreeNode[];
 
 export type ViewTreeNode = BaseTreeNode & {
-  id: string;
   expanded?: boolean;
   children: ViewTreeNode[];
 };
