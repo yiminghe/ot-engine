@@ -136,20 +136,37 @@ interface DocConfig<S,P,Pr> {
     undoStackLimit?: number;
     cacheServerOpsLimit?: number;
 }
-import { Event } from 'ts-event-target';
+import { Event,EventTarget } from 'ts-event-target';
 declare class OpEvent<P> extends Event<'op'> {
     ops: P[];
     source: boolean;
     constructor();
 }
-export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>]> {
+declare class BeforeOpEvent<P> extends Event<'beforeOp'> {
+    ops: P[];
+    source: boolean;
+    constructor();
+}
+declare class RemoteDeleteDocEvent extends Event<'remoteDeleteDoc'> {
+  constructor();
+}
+export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>, BeforeOpEvent<P>, RemoteDeleteDocEvent]> {
     constructor(config: DocConfig<S,P,Pr>);
     canUndo(): boolean;
     canRedo(): boolean;
     undo(): void;
     redo(): void;
-    destryoy(): void;
+    destroy(): void;
     submitOp(opContent: P): void;
+    delete(): Promise<void>;
     fetch(): Promise<Snapshot<S>>;
 }
+```
+
+## release workflow
+
+```
+yarn version check -i
+yarn version apply --all
+yarn run pub
 ```

@@ -147,14 +147,18 @@ declare class BeforeOpEvent<P> extends Event<'beforeOp'> {
     source: boolean;
     constructor();
 }
-export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>, BeforeOpEvent<P>]> {
+declare class RemoteDeleteDocEvent extends Event<'remoteDeleteDoc'> {
+  constructor();
+}
+export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>, BeforeOpEvent<P>, RemoteDeleteDocEvent]> {
     constructor(config: DocConfig<S,P,Pr>);
     canUndo(): boolean;
     canRedo(): boolean;
     undo(): void;
     redo(): void;
-    destryoy(): void;
+    destroy(): void;
     submitOp(opContent: P): void;
+    delete(): Promise<void>;
     fetch(): Promise<Snapshot<S>>;
 }
 ```

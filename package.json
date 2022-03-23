@@ -13,7 +13,7 @@
     "examples/*"
   ],
   "scripts": {
-    "pub": "sh scripts/pub.sh",
+    "pub": "yarn run sync-md && sh scripts/pub.sh",
     "test": "echo 0",
     "sync-md": "ts-node scripts/syncMd.ts",
     "lint-fix": "yarn run lint --fix",
