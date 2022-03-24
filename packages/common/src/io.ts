@@ -30,6 +30,10 @@ export interface DeleteDocRequest
   type: 'deleteDoc';
 }
 
+export interface PresencesRequest {
+  type: 'presences';
+}
+
 export interface GetOpsRequest
   extends Omit<GetOpsParams, AgentInfoKeys>,
     BaseRequest {
@@ -43,6 +47,7 @@ export interface CommitOpRequest<P>
 }
 
 export type ClientRequest<P, Pr> =
+  | PresencesRequest
   | DeleteDocRequest
   | PresenceIO<Pr>
   | GetSnapshotRequest
@@ -54,13 +59,19 @@ interface BaseResponse {
   error?: any;
 }
 
-export interface GetSnapshotResponse<S, P> extends BaseResponse {
+export interface GetSnapshotResponse<S, P, Pr> extends BaseResponse {
   type: 'getSnapshot';
   snapshotAndOps?: SnapshotAndOps<S, P>;
+  presences?: Record<string, Presence<Pr>>;
 }
 
 export interface DeleteDocResponse extends BaseResponse {
   type: 'deleteDoc';
+}
+
+export interface PresencesResponse<Pr> {
+  type: 'presences';
+  presences: Record<string, Presence<Pr>>;
 }
 
 export interface GetOpsResponse<P> extends BaseResponse {
@@ -84,7 +95,8 @@ export type ClientResponse<S, P, Pr> =
   | PresenceIO<Pr>
   | CommitOpResponse<P>
   | GetOpsResponse<P>
-  | GetSnapshotResponse<S, P>
+  | PresencesResponse<Pr>
+  | GetSnapshotResponse<S, P, Pr>
   | RemoteOpResponse<P>;
 
 export interface GetOpsParams extends AgentInfo {

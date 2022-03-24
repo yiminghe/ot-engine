@@ -158,8 +158,11 @@ export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>, BeforeOpEvent<
     redo(): void;
     destroy(): void;
     submitOp(opContent: P): void;
+    submitPresence(presence: Pr): void;
     delete(): Promise<void>;
     fetch(): Promise<Snapshot<S>>;
+    data:S;
+    remotePresences:Record<string,Pr>;
 }
 ```
 

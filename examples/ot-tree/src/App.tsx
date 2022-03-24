@@ -80,6 +80,33 @@ export function App() {
           }) => ({
             title: node.data.name,
             buttons: [
+              <span style={{ border: '1px solid red' }}>
+                selected clients:
+                {app.remoteSelected[node.data.id]
+                  ?.map((o: string) => o.slice(-5))
+                  .join(',')}
+              </span>,
+              <div style={{ width: 10 }} />,
+              <button
+                onClick={() => {
+                  const path =
+                    app.selectedId === node.data.id
+                      ? []
+                      : transformLowerSiblingCountsToPath(
+                          lowerSiblingCounts,
+                          model.treeData,
+                        );
+                  doc.submitPresence({ path });
+                  dispatch.app.updateSelectedPath({
+                    selectedPath: path,
+                    selectedId:
+                      app.selectedId === node.data.id ? '' : node.data.id,
+                  });
+                }}
+              >
+                {app.selectedId === node.data.id ? 'unselect' : 'select'}
+              </button>,
+              <div style={{ width: 10 }} />,
               <button
                 onClick={() => {
                   const name = window.prompt('名字') || '';

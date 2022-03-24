@@ -11,6 +11,7 @@ import {
   applyAndInvert,
   OTError,
   PresenceIO,
+  Presence,
 } from 'ot-engine-common';
 import { PubSubData } from './types';
 
@@ -25,6 +26,8 @@ export interface AgentConfig<S, P, Pr, Custom> {
 
 export class Agent<S, P, Pr, Custom> {
   closed = false;
+
+  presence?: Presence<Pr>;
 
   constructor(
     public server: Server,
@@ -63,8 +66,16 @@ export class Agent<S, P, Pr, Custom> {
     return this.config.otType;
   }
 
+  sendPresences() {
+    this.send({
+      type: 'presences',
+      presences: this.server.presencesMap[this.subscribeId] || {},
+    });
+  }
+
   open() {
     const { stream, server } = this;
+    this.sendPresences();
     stream.on('data', this.handleMessage);
     stream.on('close', this.clean);
     stream.on('end', this.clean);
@@ -203,7 +214,9 @@ export class Agent<S, P, Pr, Custom> {
     }
     const { agentInfo, server } = this;
     const { db } = server;
-    if (request.type === 'deleteDoc') {
+    if (request.type === 'presences') {
+      this.sendPresences();
+    } else if (request.type === 'deleteDoc') {
       const responseInfo = {
         type: request.type,
         seq: request.seq,
@@ -226,6 +239,7 @@ export class Agent<S, P, Pr, Custom> {
         type: 'deleteDoc',
       });
     } else if (request.type === 'presence') {
+      this.presence = request.presence;
       server.broadcast(this, request);
     } else if (request.type === 'getOps') {
       const responseInfo = {
@@ -270,6 +284,7 @@ export class Agent<S, P, Pr, Custom> {
       this.send({
         ...responseInfo,
         snapshotAndOps,
+        presences: this.server.presencesMap[this.subscribeId] || {},
       });
     } else if (request.type === 'commitOp') {
       this.handleCommitOpRequest(request);

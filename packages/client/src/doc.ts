@@ -9,6 +9,8 @@ import {
   applyAndInvert,
   GetOpsResponse,
   DeleteDocResponse,
+  GetSnapshotResponse,
+  Presence,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
 import { RemotePresence } from './RemotePresence';
@@ -58,7 +60,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
   closed = false;
 
-  data: S | undefined;
+  public data: S | undefined;
 
   version = 1;
 
@@ -80,6 +82,10 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     this.undoManager = new UndoManager<S, P, Pr>(this);
     this.remotePresence = new RemotePresence<S, P, Pr>(this);
     this.localPresence = new LocalPresence<S, P, Pr>(this);
+  }
+
+  public get presence() {
+    return this.localPresence.value;
   }
 
   getUuid() {
@@ -134,6 +140,15 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
     this.socket = socket;
 
+    socket.onopen = () => {
+      console.log('client open', Date.now());
+      if (this.data) {
+        this.send({
+          type: 'presences',
+        });
+      }
+    };
+
     socket.onmessage = (event) => {
       console.log('client onmessage', event.data);
       let data;
@@ -158,28 +173,43 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     socket.onclose = null;
   }
 
+  reloadPresences(presences: Record<string, Presence<Pr>>, fire = true) {
+    if (this.data) {
+      return this.remotePresence.reload(presences, fire);
+    }
+  }
+
   send(request: ClientRequest<P, Pr>) {
-    const seq = ++this.seq;
-    const promise = new Promise<ClientResponse<S, P, Pr>>((resolve, reject) => {
-      this.callMap.set(seq, (arg: any) => {
-        this.callMap.delete(seq);
-        if (arg.error) {
-          if (arg.error.type === 'otError' && arg.error.subType === 'deleted') {
-            const deletedEvent = new RemoteDeleteDocEvent();
-            this.dispatchEvent(deletedEvent);
-          }
-          reject(arg.error);
-        } else {
-          resolve(arg);
-        }
-      });
-    });
-    const r: any = {
-      ...request,
-      seq,
-    };
-    this.socket.send(JSON.stringify(r));
-    return promise;
+    if ('seq' in request) {
+      const seq = ++this.seq;
+      const promise = new Promise<ClientResponse<S, P, Pr>>(
+        (resolve, reject) => {
+          this.callMap.set(seq, (arg: any) => {
+            this.callMap.delete(seq);
+            if (arg.error) {
+              if (
+                arg.error.type === 'otError' &&
+                arg.error.subType === 'deleted'
+              ) {
+                const deletedEvent = new RemoteDeleteDocEvent();
+                this.dispatchEvent(deletedEvent);
+              }
+              reject(arg.error);
+            } else {
+              resolve(arg);
+            }
+          });
+        },
+      );
+      const r: any = {
+        ...request,
+        seq,
+      };
+      this.socket.send(JSON.stringify(r));
+      return promise;
+    } else {
+      this.socket.send(JSON.stringify(request));
+    }
   }
 
   async handleResponse(response: ClientResponse<S, P, Pr>) {
@@ -189,9 +219,9 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         const remoteDeleteDocEvent = new RemoteDeleteDocEvent();
         return this.dispatchEvent(remoteDeleteDocEvent);
       }
-    }
-
-    if (response.type === 'remoteOp') {
+    } else if (response.type === 'presences') {
+      this.reloadPresences(response.presences);
+    } else if (response.type === 'remoteOp') {
       if (!this.inflightOp) {
         let ops = response.ops;
         if (this.version > last(ops)!.version) {
@@ -289,12 +319,12 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
       const op = (this.inflightOp = this.inflightOp || this.pendingOps.shift()!)
         .op;
       op.version = this.version;
-      const res = await this.send({
+      const res = (await this.send({
         type: 'commitOp',
         seq: 0,
         op,
-      });
-      if (res.type === 'commitOp' && res.ops) {
+      })) as CommitOpResponse<P>;
+      if (res.ops) {
         this.handleCommitOpResponse(res);
         this.inflightOp = undefined;
       }
@@ -397,13 +427,17 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     });
   }
 
+  public get remotePresences() {
+    return this.remotePresence.remotePresences;
+  }
+
   public async fetch() {
     const { otType } = this;
-    const response = await this.send({
+    const response = (await this.send({
       type: 'getSnapshot',
       seq: 0,
-    });
-    if (response.type === 'getSnapshot' && response.snapshotAndOps) {
+    })) as GetSnapshotResponse<S, P, Pr>;
+    if (response.snapshotAndOps) {
       const { snapshot, ops } = response.snapshotAndOps;
       let { content } = snapshot;
       if (otType.create) {
@@ -414,7 +448,10 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         this.version = p.version + 1;
         content = applyAndInvert(content, p.content, false, otType)[0];
       }
-      this.data = otType.deserialize?.(content) ?? content;
+      this.data = content;
+      if (response.presences) {
+        this.reloadPresences(response.presences!, false);
+      }
       return snapshot;
     }
   }

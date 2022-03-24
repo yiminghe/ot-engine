@@ -10517,18 +10517,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ot-engine-client@0.0.6, ot-engine-client@workspace:packages/client":
+"ot-engine-client@0.0.7, ot-engine-client@workspace:packages/client":
   version: 0.0.0-use.local
   resolution: "ot-engine-client@workspace:packages/client"
   dependencies:
     "@pika/pack": ^0.5.0
-    ot-engine-common: 0.0.5
+    ot-engine-common: 0.0.6
     ts-event-target: 0.1.x
     typescript: ^4.6.2
   languageName: unknown
   linkType: soft
 
-"ot-engine-common@0.0.5, ot-engine-common@workspace:packages/common":
+"ot-engine-common@0.0.6, ot-engine-common@workspace:packages/common":
   version: 0.0.0-use.local
   resolution: "ot-engine-common@workspace:packages/common"
   dependencies:
@@ -10537,12 +10537,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"ot-engine-server@0.0.5, ot-engine-server@workspace:packages/server":
+"ot-engine-server@0.0.6, ot-engine-server@workspace:packages/server":
   version: 0.0.0-use.local
   resolution: "ot-engine-server@workspace:packages/server"
   dependencies:
     "@pika/pack": ^0.5.0
-    ot-engine-common: 0.0.5
+    ot-engine-common: 0.0.6
     ts-event-target: 0.1.x
     typescript: ^4.6.2
   languageName: unknown
@@ -10575,12 +10575,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"ot-engine@0.0.6, ot-engine@workspace:packages/engine":
+"ot-engine@0.0.7, ot-engine@workspace:packages/engine":
   version: 0.0.0-use.local
   resolution: "ot-engine@workspace:packages/engine"
   dependencies:
-    ot-engine-client: 0.0.6
-    ot-engine-server: 0.0.5
+    ot-engine-client: 0.0.7
+    ot-engine-server: 0.0.6
   languageName: unknown
   linkType: soft
 
@@ -10600,7 +10600,7 @@ __metadata:
     "@yiminghe/react-scripts": 5.x
     express: ^4.14.0
     immer: 9.x
-    ot-engine: 0.0.6
+    ot-engine: 0.0.7
     ot-tree: 1.x
     qs: 6.x
     react: 16.x

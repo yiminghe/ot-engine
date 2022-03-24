@@ -1,4 +1,5 @@
 import { insertOp, moveOp } from 'ot-tree';
+import { TreePresence } from 'ot-tree';
 import { doc } from './doc';
 import { TreeNode, Model, Operation, ExpandInfo } from './types';
 import {
@@ -9,6 +10,8 @@ import {
   transformNewPathToOldPath,
   uuidv4,
   getParentsAndSelfAtNodePath,
+  getIdPathFromPath,
+  last,
 } from './utils';
 
 export const model = {
@@ -48,8 +51,29 @@ export const model = {
 export const app = {
   state: {
     expand: {},
+    selectedPath: [],
+    selectedId: '',
+    remoteSelected: {},
   },
   reducers: {
+    doUpdateRemoteSelected(
+      rootState: { remoteSelected: any },
+      remoteSelected: any,
+    ) {
+      return {
+        ...rootState,
+        remoteSelected,
+      };
+    },
+    updateSelectedPath(
+      rootState: { selectedPath: number[] },
+      payload: { selectedPath: number[]; selectedId: string },
+    ) {
+      return {
+        ...rootState,
+        ...payload,
+      };
+    },
     updateExpand(rootState: { expand: ExpandInfo }, payload: any) {
       const keys = Object.keys(payload);
       let changed = false;
@@ -72,10 +96,40 @@ export const app = {
           expand[k] = payload[k];
         }
       }
-      return changed ? { expand } : rootState;
+      return changed ? { ...rootState, expand } : rootState;
     },
   },
   effects: (dispatch: any) => ({
+    onPresence(presence: any, rootState: any) {
+      const selectedPath = presence?.path || [];
+      const selectedId = selectedPath.length
+        ? last(getIdPathFromPath(selectedPath, rootState.model.treeData))
+        : '';
+
+      dispatch.app.updateSelectedPath({
+        selectedId,
+        selectedPath,
+      });
+    },
+    updateRemoteSelected(payload: Map<string, TreePresence>, rootState: any) {
+      const { remoteSelected } = rootState.app;
+      for (const clientId of Array.from(payload.keys())) {
+        const path = payload.get(clientId)?.path;
+        for (const nodeId of Object.keys(remoteSelected)) {
+          const clients = remoteSelected[nodeId];
+          const index = clients.indexOf(clientId);
+          if (index !== -1) {
+            clients.splice(index, 1);
+          }
+        }
+        if (path && path.length) {
+          const id = last(getIdPathFromPath(path, rootState.model.treeData));
+          remoteSelected[id] = remoteSelected[id] || [];
+          remoteSelected[id].push(clientId);
+        }
+      }
+      dispatch.app.doUpdateRemoteSelected(remoteSelected);
+    },
     moveNode(arg: any, rootState: any) {
       const { treeData } = rootState.model;
       const newTreeData = arg.treeData;
@@ -124,7 +178,7 @@ export const app = {
       }
 
       let text = window.prompt('名字') || '';
-      text = text || id.slice(0, 10);
+      text = text || id.slice(-5);
 
       doc.submitOp(
         insertOp(path, {

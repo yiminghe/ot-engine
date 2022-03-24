@@ -1,6 +1,6 @@
 import { ExpandInfo, TreeNode, ViewTreeNode, TreeData, Path } from './types';
 import { utils as pathUtils } from 'ot-tree';
-
+import { v4 as uuid } from 'uuid';
 export function last<O = any>(args: O[]) {
   return args && args[args.length - 1];
 }
@@ -77,10 +77,11 @@ export function stopPropagation(e: any) {
   e.stopPropagation();
 }
 
+const prefix = uuid();
 let uid = 1;
 
 export function uuidv4() {
-  return `${++uid}`;
+  return `${prefix}-${++uid}`;
 }
 
 export function transformToViewTree(
@@ -160,4 +161,16 @@ export function transformNewPathToOldPath(
     toPath = [...parentPath, 0];
   }
   return toPath;
+}
+
+export function isPathEqual(path1: Path, path2: Path) {
+  if (path1 && path2 && path1.length === path2.length) {
+    for (let i = 0; i < path1.length; i++) {
+      if (path1[i] !== path2[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
 }

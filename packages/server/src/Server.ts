@@ -2,6 +2,7 @@ import type { DB, PubSub } from './types';
 import type {
   DeleteDocResponse,
   PresenceIO,
+  Presence,
   RemoteOpResponse,
 } from 'ot-engine-common';
 import { Agent, AgentConfig } from './Agent';
@@ -16,10 +17,18 @@ export interface ServerConfig {
 
 type ServerConfig_ = Required<ServerConfig>;
 
+interface PresenceMessage {
+  subscribeId: string;
+  presence: Presence<any>;
+  clientId: string;
+}
+
 export class Server {
   config: ServerConfig_;
 
   agentsMap: Map<string, Set<Agent<any, any, any, any>>> = new Map();
+
+  presencesMap: Record<string, Record<string, Presence<any>>> = {};
 
   constructor(config: ServerConfig = {}) {
     config = this.config = {
@@ -34,7 +43,19 @@ export class Server {
     if (!config.db) {
       config.db = new MemoryDB();
     }
+
+    this.pubSub.subscribe('presence', this.onPresence);
   }
+
+  onPresence = ({ data }: { data: PresenceMessage }) => {
+    const docMap = (this.presencesMap[data.subscribeId] =
+      this.presencesMap[data.subscribeId] || {});
+    if (data.presence.content) {
+      docMap[data.clientId] = data.presence;
+    } else {
+      delete docMap[data.clientId];
+    }
+  };
 
   get pubSub() {
     return this.config.pubSub;
@@ -59,6 +80,15 @@ export class Server {
       | Omit<DeleteDocResponse, 'seq'>,
   ) {
     this.pubSub.publish(from.subscribeId, message);
+    if (message.type === 'presence') {
+      const msg: PresenceMessage = {
+        subscribeId: from.subscribeId,
+        presence: message.presence,
+        clientId: message.clientId,
+      };
+      this.onPresence({ data: msg });
+      this.pubSub.publish('presence', msg);
+    }
   }
 
   deleteAgent<S, P, Pr, Custom>(agent: Agent<S, P, Pr, Custom>) {
