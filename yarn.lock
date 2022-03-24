@@ -10616,12 +10616,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"ot-tree@npm:1.x":
-  version: 1.1.5
-  resolution: "ot-tree@npm:1.1.5::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fot-tree%2F-%2Fot-tree-1.1.5.tgz"
-  checksum: 2f83bae2b7c0c919fc5877798e9d0d6d17596ebe3c3b598e834b91bc06476134570008464f2b7d5c4aee0c04a0e0bef064c8f2672541b3efbd574e4e9d9b1d7c
+"ot-tree@portal:/Users/yiminghe/code/my-lib/ot-tree::locator=ot-engine-worktree%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "ot-tree@portal:/Users/yiminghe/code/my-lib/ot-tree::locator=ot-engine-worktree%40workspace%3A."
   languageName: node
-  linkType: hard
+  linkType: soft
 
 "ow@npm:^0.15.0":
   version: 0.15.1

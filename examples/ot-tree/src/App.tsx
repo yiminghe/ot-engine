@@ -10,6 +10,7 @@ import {
 } from './utils';
 import { useSelector, useDispatch } from 'react-redux';
 import { doc } from './doc';
+import { editOp, removeOp } from 'ot-tree';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 function noop() {}
@@ -87,18 +88,7 @@ export function App() {
                       lowerSiblingCounts,
                       model.treeData,
                     );
-                    doc.submitOp([
-                      {
-                        type: 'edit_node',
-                        path,
-                        data: {
-                          name,
-                        },
-                        prevData: {
-                          name: node.data.name,
-                        },
-                      },
-                    ]);
+                    doc.submitOp(editOp(path, { name }));
                   }
                 }}
               >
@@ -119,13 +109,7 @@ export function App() {
                     lowerSiblingCounts,
                     model.treeData,
                   );
-                  doc.submitOp([
-                    {
-                      type: 'remove_node',
-                      removedNode: node,
-                      path,
-                    },
-                  ]);
+                  doc.submitOp(removeOp(path));
                 }}
               >
                 Remove

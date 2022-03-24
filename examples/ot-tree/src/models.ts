@@ -1,3 +1,4 @@
+import { insertOp, moveOp } from 'ot-tree';
 import { doc } from './doc';
 import { TreeNode, Model, Operation, ExpandInfo } from './types';
 import {
@@ -98,13 +99,7 @@ export const app = {
         treeData,
       );
 
-      doc.submitOp([
-        {
-          type: 'move_node',
-          fromPath,
-          toPath,
-        },
-      ]);
+      doc.submitOp(moveOp(fromPath, toPath));
 
       if (parents.length) {
         const map: Record<string, true> = {};
@@ -131,19 +126,15 @@ export const app = {
       let text = window.prompt('名字') || '';
       text = text || id.slice(0, 10);
 
-      doc.submitOp([
-        {
-          type: 'insert_node',
-          path,
-          newNode: {
-            data: {
-              id,
-              name: text, //`${text}_${id}`.slice(0, 10),
-            },
-            children: [],
+      doc.submitOp(
+        insertOp(path, {
+          data: {
+            id,
+            name: text, //`${text}_${id}`.slice(0, 10),
           },
-        },
-      ]);
+          children: [],
+        }),
+      );
     },
   }),
 };
