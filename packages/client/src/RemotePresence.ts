@@ -26,12 +26,11 @@ export class RemotePresence<S, P, Pr> {
   }
 
   get remotePresences() {
-    const ret: Map<string, Pr> = new Map();
+    // undefined means not transformed(not valid to use)
+    const ret: Map<string, Pr | undefined> = new Map();
     for (const clientId of Array.from(this.remotePresence.keys())) {
       const { normal } = this.remotePresence.get(clientId)!;
-      if (normal?.content) {
-        ret.set(clientId, normal.content);
-      }
+      ret.set(clientId, normal?.content);
     }
     return ret;
   }
@@ -99,6 +98,7 @@ export class RemotePresence<S, P, Pr> {
       if (!changeSet) {
         const event = new RemotePresenceEvent<Pr>();
         this.remotePresence.delete(clientId);
+        // undefined means offline,need to delete from UI
         event.changed.set(clientId, undefined);
         doc.dispatchEvent(event);
       } else {
