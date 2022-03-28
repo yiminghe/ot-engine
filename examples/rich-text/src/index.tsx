@@ -18,10 +18,11 @@ const nameInput = document.getElementById('name') as HTMLInputElement;
 const colors: Record<string, string> = {};
 
 doc.fetch().then(() => {
-  initialiseQuill();
+  const { remotePresences } = doc;
+  initialiseQuill(remotePresences);
 });
 
-function initialiseQuill() {
+function initialiseQuill(remotePresences: Map<string, any>) {
   const undo = document.getElementById('undo') as HTMLButtonElement;
   const redo = document.getElementById('redo') as HTMLButtonElement;
 
@@ -80,14 +81,26 @@ function initialiseQuill() {
     },
   );
 
-  doc.addEventListener('remotePresence', (e) => {
-    for (const id of Array.from(e.changed.keys())) {
-      const range: any = e.changed.get(id)!;
+  function updateRemotePresence(presences: Map<string, any>) {
+    for (const id of Array.from(presences.keys())) {
+      const range: any = presences.get(id)!;
+      if (!range) {
+        cursors.removeCursor(id);
+        return;
+      }
       colors[id] = colors[id] || tinycolor.random().toHexString();
-      const name = (range && range.name) || 'Anonymous';
+      const name = range.name || 'Anonymous';
       cursors.createCursor(id, name, colors[id]);
       cursors.moveCursor(id, range);
     }
+  }
+
+  if (remotePresences.size) {
+    updateRemotePresence(remotePresences);
+  }
+
+  doc.addEventListener('remotePresence', (e) => {
+    updateRemotePresence(e.changed);
   });
 
   return quill;
