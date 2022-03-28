@@ -11,7 +11,7 @@ type.invertWithDoc = (delta: any, snapshot: any) => {
 };
 
 const collection = 'examples';
-const docId = 'tree';
+const docId = 'quill';
 const clientId = v4(); // userId+Date.now();
 // Open WebSocket connection
 const socket: any = new ReconnectingWebSocket(
