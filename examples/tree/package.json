@@ -1,5 +1,5 @@
 {
-  "name": "ot-tree-example",
+  "name": "tree-example",
   "private": true,
   "scripts": {
     "client": "react-scripts start",
@@ -10,16 +10,14 @@
     "@rematch/core": "2.x",
     "@rematch/immer": "2.x",
     "@teamwork/websocket-json-stream": "^2.0.0",
-    "@types/node": "^12.0.0",
     "@types/react": "^16.9.53",
     "@types/react-dom": "^16.9.8",
     "@types/react-redux": "7.x",
     "@types/react-sortable-tree": "0.3.x",
     "@types/uuid": "8.x",
-    "@yiminghe/react-scripts": "5.x",
     "express": "^4.14.0",
     "immer": "9.x",
-    "ot-engine": "0.0.7",
+    "ot-engine": "0.0.9",
     "ot-tree": "1.x",
     "qs": "6.x",
     "react": "16.x",
@@ -28,10 +26,14 @@
     "react-sortable-tree": "^2.8.0",
     "reconnecting-websocket": "4.x",
     "redux": "4.x",
-    "ts-node": "10.x",
-    "typescript": "4.x",
     "uuid": "8.x",
     "ws": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.0",
+    "@yiminghe/react-scripts": "5.x",
+    "ts-node": "10.x",
+    "typescript": "4.x"
   },
   "browserslist": {
     "production": [

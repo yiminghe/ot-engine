@@ -4,6 +4,7 @@ import type {
   PresenceIO,
   Presence,
   RemoteOpResponse,
+  Logger,
 } from 'ot-engine-common';
 import { Agent, AgentConfig } from './Agent';
 import { MemoryPubSub } from './MemoryPubSub';
@@ -12,6 +13,7 @@ import { MemoryDB } from './MemoryDB';
 export interface ServerConfig {
   saveInterval?: number;
   db?: DB;
+  logger?: Logger;
   pubSub?: PubSub<any>;
 }
 
@@ -32,6 +34,7 @@ export class Server {
 
   constructor(config: ServerConfig = {}) {
     config = this.config = {
+      logger: undefined!,
       saveInterval: 50,
       db: undefined!,
       pubSub: undefined!,
@@ -115,15 +118,22 @@ export class Server {
     return this.config.db;
   }
 
+  log(...msg: any) {
+    return this.config.logger?.log(...msg);
+  }
+
   printAgentSize() {
     for (const key of Array.from(this.agentsMap.keys())) {
       const set = this.agentsMap.get(key)!;
-      console.log(key + ' agent count: ' + set.size);
+      this.log(key + ' agent count: ' + set.size);
     }
   }
 
   public handleStream<S, P, Pr, Custom>(config: AgentConfig<S, P, Pr, Custom>) {
-    const agent = new Agent(this, config);
+    const agent = new Agent(this, {
+      logger: this.config.logger,
+      ...config,
+    });
     this.addAgent(agent);
     agent.open();
     return agent;

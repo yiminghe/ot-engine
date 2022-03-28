@@ -1,4 +1,4 @@
-import type { OTSide, OTType } from './core';
+import type { OTSide, OTType, Op } from './core';
 
 export function transformType<S, P, Pr>(
   op: P[],
@@ -35,14 +35,21 @@ export function applyAndInvert<S, P, Pr, I extends boolean>(
 }
 
 export function transformPresence<S, P, Pr>(
+  presenceClientId: string,
   presence: Pr,
   refOps: P[],
+  clientIds: string[],
   otType: OTType<S, P, Pr>,
 ) {
-  const { transformPresence } = otType;
-  if (transformPresence) {
-    for (const op of refOps) {
-      presence = transformPresence(presence, op);
+  if (otType.transformPresence) {
+    for (let i = 0; i < refOps.length; i++) {
+      const op = refOps[i];
+      const opClientId = clientIds[i];
+      presence = otType.transformPresence(
+        presence,
+        op,
+        opClientId === presenceClientId,
+      );
     }
   }
   return presence;
@@ -89,7 +96,7 @@ function transform(
 }
 
 export function last<T>(arr: T[], index = 1) {
-  return arr[arr.length - index];
+  return arr && arr[arr.length - index];
 }
 
 export class OTError extends Error {
@@ -103,3 +110,13 @@ export class OTError extends Error {
     };
   }
 }
+
+export function isSameOp<P>(op: Op<P> | undefined, other: Op<P> | undefined) {
+  if (op && other) {
+    return op.clientId === other.clientId && op.id === other.id;
+  }
+  return op === other;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export function noop() {}

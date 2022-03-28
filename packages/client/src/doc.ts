@@ -11,6 +11,8 @@ import {
   DeleteDocResponse,
   GetSnapshotResponse,
   Presence,
+  isSameOp,
+  Logger,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
 import { RemotePresence } from './RemotePresence';
@@ -31,7 +33,14 @@ interface DocConfig<S, P, Pr> {
   socket: WebSocket;
   otType: OTType<S, P, Pr>;
   undoStackLimit?: number;
+  logger?: Logger;
   cacheServerOpsLimit?: number;
+}
+
+function sleep(time: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, time);
+  });
 }
 
 export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
@@ -73,6 +82,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   constructor(config: DocConfig<S, P, Pr>) {
     super();
     this.config = {
+      logger: undefined!,
       ...config,
       undoStackLimit: 30,
       cacheServerOpsLimit: 500,
@@ -88,8 +98,12 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     return this.localPresence.value;
   }
 
+  log(...msg: any[]) {
+    return this.config.logger?.log(...msg);
+  }
+
   getUuid() {
-    return `${this.clientId}-${++this.uid}`;
+    return '' + ++this.uid;
   }
 
   get clientId() {
@@ -113,23 +127,24 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     return this.undoManager.redo();
   }
 
-  apply(op: any, invert: boolean) {
+  apply<T extends boolean>(op: P, invert: T): T extends true ? P : undefined {
     const ret = applyAndInvert(this.data, op, invert, this.otType);
     this.data = ret[0];
-    return ret[1];
+    return ret[1] as any;
   }
 
-  fireOpEvent(ops: P[], source = false) {
-    const opEvent = new OpEvent<P>();
-    opEvent.ops = ops;
-    opEvent.source = source;
+  fireOpEvent(ops: P[], clientIds: string[], source = false, undoRedo = false) {
+    const opEvent = new OpEvent<P>(ops, clientIds, source, undoRedo);
     this.dispatchEvent(opEvent);
   }
 
-  fireBeforeOpEvent(ops: P[], source = false) {
-    const opEvent = new BeforeOpEvent<P>();
-    opEvent.ops = ops;
-    opEvent.source = source;
+  fireBeforeOpEvent(
+    ops: P[],
+    clientIds: string[],
+    source = false,
+    undoRedo = false,
+  ) {
+    const opEvent = new BeforeOpEvent<P>(ops, clientIds, source, undoRedo);
     this.dispatchEvent(opEvent);
   }
 
@@ -141,7 +156,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     this.socket = socket;
 
     socket.onopen = () => {
-      console.log('client open', Date.now());
+      this.log('client open', Date.now());
       if (this.data) {
         this.send({
           type: 'presences',
@@ -150,7 +165,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     };
 
     socket.onmessage = (event) => {
-      console.log('client onmessage', event.data);
+      this.log('client onmessage', event.data);
       let data;
       try {
         data =
@@ -241,14 +256,15 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         }
         this.version = last(ops)!.version + 1;
         const opContents = ops.map((o) => o.content);
-        this.fireBeforeOpEvent(opContents, false);
+        const clientIds = ops.map((o) => o.clientId);
+        this.fireBeforeOpEvent(opContents, clientIds, false);
         for (const o of opContents) {
           this.apply(o, false);
         }
         const remoteOpEvent = new RemoteOpEvent<P>();
         remoteOpEvent.afterOps = ops;
         this.dispatchEvent(remoteOpEvent);
-        this.fireOpEvent(opContents, false);
+        this.fireOpEvent(opContents, clientIds, false);
       }
     } else if (response.type === 'presence') {
       this.remotePresence.onPresenceResponse(response);
@@ -285,23 +301,41 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     });
   }
 
-  submitPendingOp(op: PendingOp<P>) {
+  submitPendingOp(op: PendingOp<P>, undoRedo = false) {
     this.pendingOps.push(op);
-    this.fireOpEvent([op.op.content], true);
+    this.fireOpEvent([op.op.content], [this.clientId], true, undoRedo);
     this.checkSend();
   }
 
   public submitOp(opContent: P) {
+    this.fireBeforeOpEvent([opContent], [this.clientId], true);
+    const invert = this.apply(opContent, true);
+    const { otType } = this;
+    if (otType.compose) {
+      const lastPendingOp = last(this.pendingOps);
+      if (lastPendingOp) {
+        const composed = otType.compose(lastPendingOp.op.content, opContent);
+        const composedInvert = otType.compose(
+          invert,
+          lastPendingOp.invert.content,
+        );
+        if (composed && composedInvert) {
+          lastPendingOp.op.content = composed;
+          lastPendingOp.invert.content = composedInvert;
+          return;
+        }
+      }
+    }
     const op: Op<P> = {
       id: this.getUuid(),
+      clientId: this.clientId,
       version: 0,
       content: opContent,
     };
-    this.fireBeforeOpEvent([opContent], true);
-    const invert = this.apply(opContent, true);
     const pendingOp: PendingOp<P> = {
       op,
       invert: {
+        clientId: this.clientId,
         version: 0,
         id: '-' + op.id,
         content: invert,
@@ -311,10 +345,13 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     this.submitPendingOp(pendingOp);
   }
 
+  sending = false;
+
   async checkSend() {
-    if (this.inflightOp) {
+    if (this.sending) {
       return;
     }
+    this.sending = true;
     while (this.pendingOps.length) {
       const op = (this.inflightOp = this.inflightOp || this.pendingOps.shift()!)
         .op;
@@ -328,7 +365,9 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         this.handleCommitOpResponse(res);
         this.inflightOp = undefined;
       }
+      await sleep(300);
     }
+    this.sending = false;
     const noPendingEvent = new NoPendingEvent();
     this.dispatchEvent(noPendingEvent);
   }
@@ -342,7 +381,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
       const opsFromServer = res.ops!;
       let sourceIndex;
       for (sourceIndex = 0; sourceIndex < opsFromServer.length; sourceIndex++) {
-        if (opsFromServer[sourceIndex].id === inflightOp.op.id) {
+        if (isSameOp(opsFromServer[sourceIndex], inflightOp.op)) {
           break;
         }
       }
@@ -357,34 +396,48 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
       remoteOpEvent.afterOps = afterOps;
       remoteOpEvent.sourceOp = sourceOp;
       this.dispatchEvent(remoteOpEvent);
+      const clientId = this.clientId;
 
       this.version = last(opsFromServer).version + 1;
       if (prevOps.length || afterOps.length) {
-        const opForEvents: any[] = [];
+        const opForEvents: P[] = [];
+        const clientIds: string[] = [];
+        const prevOpsContent = prevOps.map((o) => o.content);
+        const afterOpsContent = afterOps.map((o) => o.content);
 
         for (const pendingOp of [...localOps].reverse()) {
           opForEvents.push(pendingOp.invert.content);
+          clientIds.push(clientId);
         }
         for (const o of opsFromServer) {
-          const { content } = o;
+          const { content, clientId } = o;
           opForEvents.push(content);
+          clientIds.push(clientId);
         }
 
-        const localOpsCongent = localOps.map((o) => o.op.content);
-        let newPendingOps: any[] = localOpsCongent;
+        const localOpsContent = localOps.map((o) => o.op.content);
+        let newPendingOps: P[] = localOpsContent;
 
         if (prevOps.length) {
-          newPendingOps = transformType(newPendingOps, prevOps, otType)[0];
+          newPendingOps = transformType(
+            newPendingOps,
+            prevOpsContent,
+            otType,
+          )[0];
         }
 
         newPendingOps.shift();
 
         if (afterOps.length) {
-          newPendingOps = transformType(newPendingOps, afterOps, otType)[0];
+          newPendingOps = transformType(
+            newPendingOps,
+            afterOpsContent,
+            otType,
+          )[0];
         }
 
         for (let i = 0; i < newPendingOps.length; i++) {
-          pendingOps[i].op.content = newPendingOps[i].content;
+          pendingOps[i].op.content = newPendingOps[i];
         }
 
         inflightOp.op.content = sourceOp.content;
@@ -393,17 +446,18 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         for (const pendingOp of pendingOps) {
           const { content } = pendingOp.op;
           opForEvents.push(content);
+          clientIds.push(clientId);
         }
 
-        this.fireBeforeOpEvent(opForEvents, false);
+        this.fireBeforeOpEvent(opForEvents, clientIds, false);
 
         for (const pendingOp of [...localOps].reverse()) {
           this.apply(pendingOp.invert.content, false);
         }
 
         for (const o of opsFromServer) {
-          const { content, id } = o;
-          if (id === inflightOp.op.id) {
+          const { content } = o;
+          if (isSameOp(inflightOp.op, o)) {
             inflightOp.invert.content = this.apply(content, true);
           } else {
             this.apply(content, false);
@@ -415,7 +469,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
           pendingOp.invert.content = this.apply(content, true);
         }
 
-        this.fireOpEvent(opForEvents, false);
+        this.fireOpEvent(opForEvents, clientIds, false);
       }
     }
   }

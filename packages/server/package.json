@@ -1,6 +1,6 @@
 {
   "name": "ot-engine-server",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",
@@ -41,7 +41,7 @@
     ]
   },
   "dependencies": {
-    "ot-engine-common": "0.0.6",
+    "ot-engine-common": "0.0.8",
     "ts-event-target": "0.1.x"
   },
   "devDependencies": {

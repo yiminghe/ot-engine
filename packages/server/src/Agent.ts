@@ -12,6 +12,8 @@ import {
   OTError,
   PresenceIO,
   Presence,
+  isSameOp,
+  Logger,
 } from 'ot-engine-common';
 import { PubSubData } from './types';
 
@@ -22,6 +24,7 @@ export interface AgentConfig<S, P, Pr, Custom> {
   docId: string;
   clientId: string;
   otType: OTType<S, P, Pr>;
+  logger?: Logger;
 }
 
 export class Agent<S, P, Pr, Custom> {
@@ -44,6 +47,10 @@ export class Agent<S, P, Pr, Custom> {
 
   get collection() {
     return this.config.collection;
+  }
+
+  log(...msg: any) {
+    this.config.logger?.log(...msg);
   }
 
   get agentInfo() {
@@ -102,7 +109,7 @@ export class Agent<S, P, Pr, Custom> {
   };
 
   clean = () => {
-    console.log('server clean');
+    this.log('server clean');
     this.closed = true;
     this.server.deleteAgent(this);
     this.server.pubSub.unsubscribe(this.subscribeId, this.onSubscribe);
@@ -163,7 +170,7 @@ export class Agent<S, P, Pr, Custom> {
       if (ops.length) {
         let i = 0;
         for (i = 0; i < ops.length; i++) {
-          if (ops[i].id === op.id) {
+          if (isSameOp(ops[i], op)) {
             newOp = ops[i];
             break;
           }
@@ -208,7 +215,7 @@ export class Agent<S, P, Pr, Custom> {
   }
 
   handleMessage = async (request: ClientRequest<P, Pr>) => {
-    console.log('server onmessage', request);
+    this.log?.('server onmessage', request);
     if (this.closed) {
       return;
     }

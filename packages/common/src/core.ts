@@ -13,7 +13,7 @@ export type OTType<S, P, Pr> = {
   invertWithDoc?(op: P, snapshot: S): P;
   compose?(op: P, prevOp: P): P | undefined;
   transform(op: P, refOp: P, side: OTSide): P;
-  transformPresence?(presence: Pr, refOp: P): Pr;
+  transformPresence?(presence: Pr, refOp: P, isOwnOp: boolean): Pr;
   serialize?(s: S): any;
   deserialize?(data: any): S;
 };
@@ -21,6 +21,7 @@ export type OTType<S, P, Pr> = {
 export interface Op<P> {
   version: number;
   id: string;
+  clientId: string;
   content: P;
 }
 
@@ -37,4 +38,8 @@ export type SnapshotAndOps<S, P> = {
 export interface Presence<P> {
   version: number;
   content?: P;
+}
+
+export interface Logger {
+  log: (...msg: any) => void;
 }

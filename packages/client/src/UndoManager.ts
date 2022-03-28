@@ -1,4 +1,4 @@
-import { Op, transformType, last } from 'ot-engine-common';
+import { Op, transformType, last, isSameOp } from 'ot-engine-common';
 import { Doc } from './doc';
 import { PendingOp, RemoteOpEvent } from './types';
 
@@ -23,7 +23,7 @@ export class UndoRedoStack<S, P, Pr> {
         ...prevOps.map((o) => o.content),
       );
     }
-    if (sourceOp && stack[nextAcceptedIndex]?.op.id === sourceOp.id) {
+    if (sourceOp && isSameOp(stack[nextAcceptedIndex]?.op, sourceOp)) {
       stack[nextAcceptedIndex].accepted = true;
       nextAcceptedIndex = ++this.nextAcceptedIndex;
     }
@@ -105,6 +105,10 @@ export class UndoManager<S, P, Pr> {
     this.redoStack.clear();
   }
 
+  get lastPendingOp() {
+    return last(this.undoStack.stack);
+  }
+
   canUndo() {
     return !!this.undoStack.length;
   }
@@ -120,13 +124,13 @@ export class UndoManager<S, P, Pr> {
     const { doc } = this;
     const pendingOp = popStack.pop()!;
     pushStack.push(pendingOp);
-    doc.fireBeforeOpEvent([pendingOp.op.content], true);
+    doc.fireBeforeOpEvent([pendingOp.op.content], [doc.clientId], true, true);
     if (pendingOp.needInvert) {
       pendingOp.invert.content = doc.apply(pendingOp.op.content, true);
     } else {
       doc.apply(pendingOp.op.content, false);
     }
-    doc.submitPendingOp(pendingOp);
+    doc.submitPendingOp(pendingOp, true);
   }
 
   undo() {

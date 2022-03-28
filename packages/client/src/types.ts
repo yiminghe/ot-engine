@@ -2,17 +2,23 @@ import { Event } from 'ts-event-target';
 import { Op, Presence } from 'ot-engine-common';
 
 export class OpEvent<P> extends Event<'op'> {
-  ops: P[] = [];
-  source = false;
-  constructor() {
+  constructor(
+    public ops: P[],
+    public clientIds: string[],
+    public source: boolean,
+    public undoRedo: boolean,
+  ) {
     super('op');
   }
 }
 
 export class BeforeOpEvent<P> extends Event<'beforeOp'> {
-  ops: P[] = [];
-  source = false;
-  constructor() {
+  constructor(
+    public ops: P[],
+    public clientIds: string[],
+    public source: boolean,
+    public undoRedo: boolean,
+  ) {
     super('beforeOp');
   }
 }

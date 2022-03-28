@@ -16,7 +16,7 @@ Operational transformation engine
 
 ```
 yarn
-cd examples/ot-tree
+cd examples/tree
 yarn server
 yarn client
 ```
@@ -34,7 +34,7 @@ export type OTType<S, P,Pr> = {
   invert?(op: P): P;
   invertWithDoc?(op: P, snapshot: S): P;
   transform(op: P, refOp: P, side: OTSide): P;
-  transformPresence?(presence: Pr, refOp: P): Pr;
+  transformPresence?(presence: Pr, refOp: P, isOwnOp:boolean): Pr;
   serialize?(s: S): any;
   deserialize?(data: any): S;
 };
@@ -139,11 +139,13 @@ interface DocConfig<S,P,Pr> {
 import { Event,EventTarget } from 'ts-event-target';
 declare class OpEvent<P> extends Event<'op'> {
     ops: P[];
+    undoRedo: boolean;
     source: boolean;
     constructor();
 }
 declare class BeforeOpEvent<P> extends Event<'beforeOp'> {
     ops: P[];
+    undoRedo: boolean;
     source: boolean;
     constructor();
 }

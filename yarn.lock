@@ -4706,6 +4706,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"clone@npm:^2.1.1":
+  version: 2.1.2
+  resolution: "clone@npm:2.1.2::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fclone%2F-%2Fclone-2.1.2.tgz"
+  checksum: aaf106e9bc025b21333e2f4c12da539b568db4925c0501a1bf4070836c9e848c892fa22c35548ce0d1132b08bbbfa17a00144fe58fccdab6fa900fec4250f67d
+  languageName: node
+  linkType: hard
+
 "clsx@npm:^1.0.4":
   version: 1.1.1
   resolution: "clsx@npm:1.1.1::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fclsx%2F-%2Fclsx-1.1.1.tgz"
@@ -6483,6 +6490,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eventemitter3@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "eventemitter3@npm:2.0.3::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Feventemitter3%2F-%2Feventemitter3-2.0.3.tgz"
+  checksum: dfbf4a07144afea0712d8e6a7f30ae91beb7c12c36c3d480818488aafa437d9a331327461f82c12dfd60a4fbad502efc97f684089cda02809988b84a23630752
+  languageName: node
+  linkType: hard
+
 "eventemitter3@npm:^4.0.0, eventemitter3@npm:^4.0.4":
   version: 4.0.7
   resolution: "eventemitter3@npm:4.0.7::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Feventemitter3%2F-%2Feventemitter3-4.0.7.tgz"
@@ -6621,6 +6635,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"extend@npm:^3.0.2":
+  version: 3.0.2
+  resolution: "extend@npm:3.0.2::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fextend%2F-%2Fextend-3.0.2.tgz"
+  checksum: a50a8309ca65ea5d426382ff09f33586527882cf532931cb08ca786ea3146c0553310bda688710ff61d7668eba9f96b923fe1420cdf56a2c3eaf30fcab87b515
+  languageName: node
+  linkType: hard
+
 "external-editor@npm:^3.0.3":
   version: 3.1.0
   resolution: "external-editor@npm:3.1.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fexternal-editor%2F-%2Fexternal-editor-3.1.0.tgz"
@@ -6636,6 +6657,20 @@ __metadata:
   version: 3.1.3
   resolution: "fast-deep-equal@npm:3.1.3::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Ffast-deep-equal%2F-%2Ffast-deep-equal-3.1.3.tgz"
   checksum: e21a9d8d84f53493b6aa15efc9cfd53dd5b714a1f23f67fb5dc8f574af80df889b3bce25dc081887c6d25457cce704e636395333abad896ccdec03abaf1f3f9d
+  languageName: node
+  linkType: hard
+
+"fast-diff@npm:1.1.2":
+  version: 1.1.2
+  resolution: "fast-diff@npm:1.1.2::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Ffast-diff%2F-%2Ffast-diff-1.1.2.tgz"
+  checksum: 2ef726603e22a89ef27225bfaef24c17e3aec188df24da4629d5f012b23a884e09a0c7299ff37a0aec7aa788755bd554f5801f698de4deeffce83308bd11405d
+  languageName: node
+  linkType: hard
+
+"fast-diff@npm:1.2.0":
+  version: 1.2.0
+  resolution: "fast-diff@npm:1.2.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Ffast-diff%2F-%2Ffast-diff-1.2.0.tgz"
+  checksum: 1b5306eaa9e826564d9e5ffcd6ebd881eb5f770b3f977fcbf38f05c824e42172b53c79920e8429c54eb742ce15a0caf268b0fdd5b38f6de52234c4a8368131ae
   languageName: node
   linkType: hard
 
@@ -9425,6 +9460,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.clonedeep@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.clonedeep@npm:4.5.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Flodash.clonedeep%2F-%2Flodash.clonedeep-4.5.0.tgz"
+  checksum: 92c46f094b064e876a23c97f57f81fbffd5d760bf2d8a1c61d85db6d1e488c66b0384c943abee4f6af7debf5ad4e4282e74ff83177c9e63d8ff081a4837c3489
+  languageName: node
+  linkType: hard
+
 "lodash.debounce@npm:^4.0.8":
   version: 4.0.8
   resolution: "lodash.debounce@npm:4.0.8::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Flodash.debounce%2F-%2Flodash.debounce-4.0.8.tgz"
@@ -10517,18 +10559,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ot-engine-client@0.0.7, ot-engine-client@workspace:packages/client":
+"ot-engine-client@0.0.9, ot-engine-client@workspace:packages/client":
   version: 0.0.0-use.local
   resolution: "ot-engine-client@workspace:packages/client"
   dependencies:
     "@pika/pack": ^0.5.0
-    ot-engine-common: 0.0.6
+    ot-engine-common: 0.0.8
     ts-event-target: 0.1.x
     typescript: ^4.6.2
   languageName: unknown
   linkType: soft
 
-"ot-engine-common@0.0.6, ot-engine-common@workspace:packages/common":
+"ot-engine-common@0.0.8, ot-engine-common@workspace:packages/common":
   version: 0.0.0-use.local
   resolution: "ot-engine-common@workspace:packages/common"
   dependencies:
@@ -10537,12 +10579,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"ot-engine-server@0.0.6, ot-engine-server@workspace:packages/server":
+"ot-engine-server@0.0.8, ot-engine-server@workspace:packages/server":
   version: 0.0.0-use.local
   resolution: "ot-engine-server@workspace:packages/server"
   dependencies:
     "@pika/pack": ^0.5.0
-    ot-engine-common: 0.0.6
+    ot-engine-common: 0.0.8
     ts-event-target: 0.1.x
     typescript: ^4.6.2
   languageName: unknown
@@ -10575,52 +10617,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"ot-engine@0.0.7, ot-engine@workspace:packages/engine":
+"ot-engine@0.0.9, ot-engine@workspace:packages/engine":
   version: 0.0.0-use.local
   resolution: "ot-engine@workspace:packages/engine"
   dependencies:
-    ot-engine-client: 0.0.7
-    ot-engine-server: 0.0.6
+    ot-engine-client: 0.0.9
+    ot-engine-server: 0.0.8
   languageName: unknown
   linkType: soft
 
-"ot-tree-example@workspace:examples/ot-tree":
-  version: 0.0.0-use.local
-  resolution: "ot-tree-example@workspace:examples/ot-tree"
-  dependencies:
-    "@rematch/core": 2.x
-    "@rematch/immer": 2.x
-    "@teamwork/websocket-json-stream": ^2.0.0
-    "@types/node": ^12.0.0
-    "@types/react": ^16.9.53
-    "@types/react-dom": ^16.9.8
-    "@types/react-redux": 7.x
-    "@types/react-sortable-tree": 0.3.x
-    "@types/uuid": 8.x
-    "@yiminghe/react-scripts": 5.x
-    express: ^4.14.0
-    immer: 9.x
-    ot-engine: 0.0.7
-    ot-tree: 1.x
-    qs: 6.x
-    react: 16.x
-    react-dom: 16.x
-    react-redux: 7.x
-    react-sortable-tree: ^2.8.0
-    reconnecting-websocket: 4.x
-    redux: 4.x
-    ts-node: 10.x
-    typescript: 4.x
-    uuid: 8.x
-    ws: ^7.2.0
-  languageName: unknown
-  linkType: soft
-
-"ot-tree@portal:/Users/yiminghe/code/my-lib/ot-tree::locator=ot-engine-worktree%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "ot-tree@portal:/Users/yiminghe/code/my-lib/ot-tree::locator=ot-engine-worktree%40workspace%3A."
+"ot-tree@npm:1.x":
+  version: 1.1.6
+  resolution: "ot-tree@npm:1.1.6::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fot-tree%2F-%2Fot-tree-1.1.6.tgz"
+  checksum: fe0b2debb565eb28d0c153a6f461b0ec791f2a66fbc6ab6df0376b092bf57eee06ea8142518f6b5d5e8bd29ef6a7e5503dacc54f03938eac4ed6231c084a15d7
   languageName: node
-  linkType: soft
+  linkType: hard
 
 "ow@npm:^0.15.0":
   version: 0.15.1
@@ -10817,6 +10828,13 @@ __metadata:
     dot-case: ^3.0.4
     tslib: ^2.0.3
   checksum: b34227fd0f794e078776eb3aa6247442056cb47761e9cd2c4c881c86d84c64205f6a56ef0d70b41ee7d77da02c3f4ed2f88e3896a8fefe08bdfb4deca037c687
+  languageName: node
+  linkType: hard
+
+"parchment@npm:^1.1.4":
+  version: 1.1.4
+  resolution: "parchment@npm:1.1.4::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fparchment%2F-%2Fparchment-1.1.4.tgz"
+  checksum: 47997567424d1ad8648046091a06b3a5423ed83f9dfa421d7fd93e0032e79aedd8db5499ff55327e08eebd89d8e927704a646f87d45d4bcfe63016aa5a88947d
   languageName: node
   linkType: hard
 
@@ -12140,6 +12158,49 @@ __metadata:
   languageName: node
   linkType: hard
 
+"quill-cursors@npm:^2.2.1":
+  version: 2.3.1
+  resolution: "quill-cursors@npm:2.3.1::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fquill-cursors%2F-%2Fquill-cursors-2.3.1.tgz"
+  checksum: fe659cad020ab8528250c235a8ae79b979b7d2605be9a114b1527c3b76d1ea16fee47864ff46e743c62293d52353c96f871d7eea2a43efa69baaccae39411f4b
+  languageName: node
+  linkType: hard
+
+"quill-delta@npm:^3.6.2":
+  version: 3.6.3
+  resolution: "quill-delta@npm:3.6.3::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fquill-delta%2F-%2Fquill-delta-3.6.3.tgz"
+  dependencies:
+    deep-equal: ^1.0.1
+    extend: ^3.0.2
+    fast-diff: 1.1.2
+  checksum: e62ed339838077841db401da3181bdf559c6667d014a671767788380c5be13a6205603bcdd27445260e6f6b2b5519161e1000023e521e3b2ff087270fa67fef6
+  languageName: node
+  linkType: hard
+
+"quill-delta@npm:^4.2.1":
+  version: 4.2.2
+  resolution: "quill-delta@npm:4.2.2::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fquill-delta%2F-%2Fquill-delta-4.2.2.tgz"
+  dependencies:
+    fast-diff: 1.2.0
+    lodash.clonedeep: ^4.5.0
+    lodash.isequal: ^4.5.0
+  checksum: 6a71e3dfb46dfdc80504b5ac961c17c5ba7b576ca1240b0e212598ce5be1d510a9457531832b15ea46a0261867444faca1c1fe451b26b81b6158852e00d7422f
+  languageName: node
+  linkType: hard
+
+"quill@npm:^1.3.7":
+  version: 1.3.7
+  resolution: "quill@npm:1.3.7::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fquill%2F-%2Fquill-1.3.7.tgz"
+  dependencies:
+    clone: ^2.1.1
+    deep-equal: ^1.0.1
+    eventemitter3: ^2.0.3
+    extend: ^3.0.2
+    parchment: ^1.1.4
+    quill-delta: ^3.6.2
+  checksum: db3e265a8410a4554e50a18cae4ebc0b43a996a776bcf03e26abcadbf617f4db329d49a0fa3ada6a70538a369bbbdc8fa7a66086f194b481914bf1adbab16f8f
+  languageName: node
+  linkType: hard
+
 "raf@npm:^3.2.0, raf@npm:^3.4.1":
   version: 3.4.1
   resolution: "raf@npm:3.4.1::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fraf%2F-%2Fraf-3.4.1.tgz"
@@ -12464,7 +12525,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"reconnecting-websocket@npm:4.x":
+"reconnecting-websocket@npm:4.x, reconnecting-websocket@npm:^4.2.0":
   version: 4.4.0
   resolution: "reconnecting-websocket@npm:4.4.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Freconnecting-websocket%2F-%2Freconnecting-websocket-4.4.0.tgz"
   checksum: 7ee379ff3a4bddf9d47fb6f3fb2d9450865f0ed2d91f003e6d0c12c901e8c135379a143a933e7bed7bc33133f04bdaed534bd68591c95730044dc69d32da4866
@@ -12797,6 +12858,35 @@ __metadata:
   version: 1.0.4
   resolution: "reusify@npm:1.0.4::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Freusify%2F-%2Freusify-1.0.4.tgz"
   checksum: c3076ebcc22a6bc252cb0b9c77561795256c22b757f40c0d8110b1300723f15ec0fc8685e8d4ea6d7666f36c79ccc793b1939c748bf36f18f542744a4e379fcc
+  languageName: node
+  linkType: hard
+
+"rich-text-example@workspace:examples/rich-text":
+  version: 0.0.0-use.local
+  resolution: "rich-text-example@workspace:examples/rich-text"
+  dependencies:
+    "@teamwork/websocket-json-stream": ^2.0.0
+    "@types/node": ^12.0.0
+    "@yiminghe/react-scripts": 5.x
+    express: ^4.17.1
+    ot-engine: 0.0.9
+    quill: ^1.3.7
+    quill-cursors: ^2.2.1
+    reconnecting-websocket: ^4.2.0
+    rich-text: ^4.1.0
+    tinycolor2: ^1.4.1
+    ts-node: 10.x
+    typescript: 4.x
+    ws: ^7.2.0
+  languageName: unknown
+  linkType: soft
+
+"rich-text@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "rich-text@npm:4.1.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Frich-text%2F-%2Frich-text-4.1.0.tgz"
+  dependencies:
+    quill-delta: ^4.2.1
+  checksum: 9c5748944b2c1bc417376eeff8d80298559f5fc5d835deeb9ba164bbf49e59d045598ae5dd37f2b4f4f729a8251aff8608195eddcf6ae4fdc7047221c760428f
   languageName: node
   linkType: hard
 
@@ -14104,6 +14194,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tinycolor2@npm:^1.4.1":
+  version: 1.4.2
+  resolution: "tinycolor2@npm:1.4.2::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Ftinycolor2%2F-%2Ftinycolor2-1.4.2.tgz"
+  checksum: 57ed262e08815a4ab0ed933edafdbc6555a17081781766149813b44a080ecbe58b3ee281e81c0e75b42e4d41679f138cfa98eabf043f829e0683c04adb12c031
+  languageName: node
+  linkType: hard
+
 "tlds@npm:^1.203.0":
   version: 1.230.0
   resolution: "tlds@npm:1.230.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Ftlds%2F-%2Ftlds-1.230.0.tgz"
@@ -14187,6 +14284,38 @@ __metadata:
   checksum: ffe6049b9dca3ae329b059aada7f515b0f0064c611b39b51ff6b53897e954650f6f63d9319c6c008d36ead477c7b55e5f64c9dc60588ddc91ff720d64eb710b3
   languageName: node
   linkType: hard
+
+"tree-example@workspace:examples/tree":
+  version: 0.0.0-use.local
+  resolution: "tree-example@workspace:examples/tree"
+  dependencies:
+    "@rematch/core": 2.x
+    "@rematch/immer": 2.x
+    "@teamwork/websocket-json-stream": ^2.0.0
+    "@types/node": ^12.0.0
+    "@types/react": ^16.9.53
+    "@types/react-dom": ^16.9.8
+    "@types/react-redux": 7.x
+    "@types/react-sortable-tree": 0.3.x
+    "@types/uuid": 8.x
+    "@yiminghe/react-scripts": 5.x
+    express: ^4.14.0
+    immer: 9.x
+    ot-engine: 0.0.9
+    ot-tree: 1.x
+    qs: 6.x
+    react: 16.x
+    react-dom: 16.x
+    react-redux: 7.x
+    react-sortable-tree: ^2.8.0
+    reconnecting-websocket: 4.x
+    redux: 4.x
+    ts-node: 10.x
+    typescript: 4.x
+    uuid: 8.x
+    ws: ^7.2.0
+  languageName: unknown
+  linkType: soft
 
 "trim-newlines@npm:^2.0.0":
   version: 2.0.0

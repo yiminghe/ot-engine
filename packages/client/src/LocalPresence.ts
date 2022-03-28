@@ -13,9 +13,15 @@ export class LocalPresence<S, P, Pr> {
     }
   }
 
-  onOp = ({ ops }: OpEvent<P>) => {
+  onOp = ({ ops, clientIds }: OpEvent<P>) => {
     if (this.value !== undefined) {
-      this.value = transformPresence(this.value, ops, this.doc.otType);
+      this.value = transformPresence(
+        this.doc.clientId,
+        this.value,
+        ops,
+        clientIds,
+        this.doc.otType,
+      );
     }
   };
 

@@ -19,7 +19,7 @@ export class RemotePresence<S, P, Pr> {
   constructor(private doc: Doc<S, P, Pr>) {
     if (doc.otType.transformPresence) {
       doc.addEventListener('op', (e) => {
-        this.syncRemotePresences(e.ops, e.source);
+        this.syncRemotePresences(e.ops, e.clientIds, e.source);
       });
       doc.addEventListener('remoteOp', this.onRemoteOp);
     }
@@ -79,7 +79,7 @@ export class RemotePresence<S, P, Pr> {
       return;
     }
     if (presence.content) {
-      const syncedPresence = this.syncPresence(presence);
+      const syncedPresence = this.syncPresence(clientId, presence);
       const item = this.getOrCreatePresenceItem(clientId);
       if (syncedPresence) {
         item.pending = undefined;
@@ -123,13 +123,13 @@ export class RemotePresence<S, P, Pr> {
     }
   };
 
-  syncRemotePresences(ops: any[], onlyNormal = false) {
+  syncRemotePresences(ops: P[], clientIds: string[], onlyNormal = false) {
     const changed = new Map();
     for (const clientId of Array.from(this.remotePresence.keys())) {
       const item = this.remotePresence.get(clientId)!;
       const { pending, normal } = item;
       if (!onlyNormal && pending) {
-        const p = this.syncPresence(pending);
+        const p = this.syncPresence(clientId, pending);
         if (p) {
           item.normal = p;
           item.pending = undefined;
@@ -139,8 +139,10 @@ export class RemotePresence<S, P, Pr> {
       }
       if (normal) {
         normal.content = transformPresence(
+          clientId,
           normal.content,
           ops,
+          clientIds,
           this.doc.otType,
         );
         changed.set(clientId, normal.content);
@@ -153,14 +155,16 @@ export class RemotePresence<S, P, Pr> {
     }
   }
 
-  syncPresence(presence: Presence<Pr>) {
+  syncPresence(presenceClientId: string, presence: Presence<Pr>) {
     const { doc } = this;
     if (presence.version > doc.version) {
       return;
     }
     let transformOps;
+    let clientIds;
     if (presence.version === doc.version) {
       transformOps = doc.allPendingOps.map((o) => o.op.content);
+      clientIds = transformOps.map(() => doc.clientId);
     } else {
       const { serverOps } = this;
       const l = serverOps.length;
@@ -178,10 +182,17 @@ export class RemotePresence<S, P, Pr> {
         .map((o) => o.content)
         .slice(i)
         .concat(doc.allPendingOps.map((o) => o.op.content));
+
+      clientIds = serverOps
+        .map((o) => o.clientId)
+        .slice(i)
+        .concat(doc.allPendingOps.map(() => doc.clientId));
     }
     presence.content = transformPresence(
+      presenceClientId,
       presence.content!,
       transformOps,
+      clientIds,
       doc.otType,
     );
     return presence;
