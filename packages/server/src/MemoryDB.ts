@@ -122,10 +122,11 @@ export class MemoryDB implements DB {
     const doc = this.docs.get(getDocKey(params));
     if (doc) {
       checkDeleted(doc);
-      const lastestOps = Array.from(doc.ops.keys());
-      const lastOp = last(lastestOps);
-      if (lastOp) {
-        const version = lastOp + 1;
+      const lastOp = last(Array.from(doc.ops.keys())) || 0;
+      const lastSnapshot = last(Array.from(doc.snapshots.keys())) || 0;
+      const lastVersion = Math.max(lastOp, lastSnapshot);
+      if (lastVersion) {
+        const version = lastVersion + 1;
         doc.snapshots.set(version, {
           content: params.content,
           version,
