@@ -10,10 +10,15 @@ import {
   RemoteOpResponse,
   applyAndInvert,
   OTError,
-  PresenceIO,
+  PresenceRequest,
   Presence,
   isSameOp,
   Logger,
+  assertNever,
+  RollbackRequest,
+  DeleteDocRequest,
+  GetOpsRequest,
+  GetSnapshotRequest,
 } from 'ot-engine-common';
 import { PubSubData } from './types';
 
@@ -93,7 +98,7 @@ export class Agent<S, P, Pr, Custom> {
     return `${this.collection}_${this.docId}`;
   }
 
-  onSubscribe = (e: PubSubData<RemoteOpResponse<P> | PresenceIO<Pr>>) => {
+  onSubscribe = (e: PubSubData<RemoteOpResponse<P> | PresenceRequest<Pr>>) => {
     if (this.closed) {
       return;
     }
@@ -123,29 +128,33 @@ export class Agent<S, P, Pr, Custom> {
     this.stream.write(message);
   }
 
-  async checkAndSaveSnapshot(op: Op<P>) {
+  async getSnapshotByVersion(opVersion: number) {
     const { server, otType } = this;
+    const snapshotAndOps = await server.db.getSnapshot({
+      ...this.agentInfo,
+      version: opVersion,
+      toVersion: opVersion,
+    });
+    if (snapshotAndOps) {
+      const { content } = snapshotAndOps.snapshot;
+      let { version } = snapshotAndOps.snapshot;
+      let snapshot = otType.create?.(content) ?? content;
+      for (const op of snapshotAndOps.ops) {
+        version = op.version + 1;
+        snapshot = applyAndInvert(snapshot, op.content, false, otType)[0];
+      }
+      snapshot = otType.deserialize?.(snapshot) ?? snapshot;
+      return { content: snapshot, version };
+    }
+  }
+  async checkAndSaveSnapshot(op: Op<P>) {
+    const { server } = this;
     if (op.version % server.config.saveInterval === 0) {
-      const snapshotAndOps = await server.db.getSnapshot({
-        ...this.agentInfo,
-        version: op.version,
-        toVersion: op.version,
-      });
-      if (snapshotAndOps) {
-        const { content } = snapshotAndOps.snapshot;
-        let { version } = snapshotAndOps.snapshot;
-        let snapshot = otType.create?.(content) ?? content;
-        for (const op of snapshotAndOps.ops) {
-          version = op.version + 1;
-          snapshot = applyAndInvert(snapshot, op.content, false, otType)[0];
-        }
-        snapshot = otType.deserialize?.(snapshot) ?? snapshot;
+      const snapshot = await this.getSnapshotByVersion(op.version);
+      if (snapshot) {
         server.db.saveSnapshot({
           ...this.agentInfo,
-          snapshot: {
-            content: snapshot,
-            version,
-          },
+          snapshot,
         });
       }
     }
@@ -214,87 +223,134 @@ export class Agent<S, P, Pr, Custom> {
     this.checkAndSaveSnapshot(newOp);
   }
 
+  async handleRollbackMessage(request: RollbackRequest) {
+    const responseInfo = {
+      type: request.type,
+      seq: request.seq,
+    };
+    const { server, agentInfo } = this;
+    const snapshot = await this.getSnapshotByVersion(request.version);
+    if (snapshot) {
+      server.db.saveLatestSnapshot({
+        ...agentInfo,
+        content: snapshot.content,
+      });
+      this.send({
+        ...responseInfo,
+      });
+      server.broadcast(this, {
+        type: 'rollback',
+      });
+    } else {
+      throw new OTError({
+        subType: 'rollback',
+        detail: {},
+      });
+    }
+  }
+
+  async handleDeleteDocMessage(request: DeleteDocRequest) {
+    const { agentInfo, server } = this;
+    const { db } = server;
+    const responseInfo = {
+      type: request.type,
+      seq: request.seq,
+    };
+
+    await db.deleteDoc({
+      ...agentInfo,
+    });
+
+    this.send({
+      ...responseInfo,
+    });
+    server.broadcast(this, {
+      type: 'deleteDoc',
+    });
+  }
+
+  async handleGetOpsRequest(request: GetOpsRequest) {
+    const { agentInfo, server } = this;
+    const { db } = server;
+    const responseInfo = {
+      type: request.type,
+      seq: request.seq,
+    };
+
+    const ops = await db.getOps<P>({
+      ...agentInfo,
+      ...request,
+    });
+
+    this.send({
+      ...responseInfo,
+      ops,
+    });
+  }
+
+  async handleGetSnapshotRequest(request: GetSnapshotRequest) {
+    const { agentInfo, server } = this;
+    const { db } = server;
+    const responseInfo = {
+      type: request.type,
+      seq: request.seq,
+    };
+
+    const snapshotAndOps = await db.getSnapshot<S, P>({
+      ...request,
+      ...agentInfo,
+    });
+
+    this.send({
+      ...responseInfo,
+      snapshotAndOps,
+      presences: this.server.presencesMap[this.subscribeId] || {},
+    });
+  }
+
   handleMessage = async (request: ClientRequest<P, Pr>) => {
     this.log?.('server onmessage', request);
     if (this.closed) {
       return;
     }
-    const { agentInfo, server } = this;
-    const { db } = server;
-    if (request.type === 'presences') {
-      this.sendPresences();
-    } else if (request.type === 'deleteDoc') {
-      const responseInfo = {
-        type: request.type,
-        seq: request.seq,
-      };
-      try {
-        await db.deleteDoc({
-          ...agentInfo,
-        });
-      } catch (e: any) {
+    const responseInfo: any = {
+      type: request.type,
+    };
+    if ('seq' in request) {
+      responseInfo.seq = request.seq;
+    }
+    const { server } = this;
+    try {
+      if (request.type === 'rollback') {
+        await this.handleRollbackMessage(request);
+      } else if (request.type === 'presences') {
+        await this.sendPresences();
+      } else if (request.type === 'deleteDoc') {
+        await this.handleDeleteDocMessage(request);
+      } else if (request.type === 'presence') {
+        this.presence = request.presence;
+        server.broadcast(this, request);
+      } else if (request.type === 'getOps') {
+        await this.handleGetOpsRequest(request);
+      } else if (request.type === 'getSnapshot') {
+        await this.handleGetSnapshotRequest(request);
+      } else if (request.type === 'commitOp') {
+        await this.handleCommitOpRequest(request);
+      } else {
+        assertNever(request);
+      }
+    } catch (e: unknown) {
+      if (e instanceof OTError) {
         this.send({
           ...responseInfo,
-          error: (e as OTError).info,
+          error: e.info,
         });
-        return;
-      }
-      this.send({
-        ...responseInfo,
-      });
-      server.broadcast(this, {
-        type: 'deleteDoc',
-      });
-    } else if (request.type === 'presence') {
-      this.presence = request.presence;
-      server.broadcast(this, request);
-    } else if (request.type === 'getOps') {
-      const responseInfo = {
-        type: request.type,
-        seq: request.seq,
-      };
-      let ops;
-      try {
-        ops = await db.getOps<P>({
-          ...agentInfo,
-          ...request,
-        });
-      } catch (e: any) {
+      } else {
         this.send({
           ...responseInfo,
-          error: (e as OTError).info,
+          error: JSON.parse(JSON.stringify(e)),
         });
-        return;
       }
-      this.send({
-        ...responseInfo,
-        ops,
-      });
-    } else if (request.type === 'getSnapshot') {
-      const responseInfo = {
-        type: request.type,
-        seq: request.seq,
-      };
-      let snapshotAndOps;
-      try {
-        snapshotAndOps = await db.getSnapshot<S, P>({
-          ...request,
-          ...agentInfo,
-        });
-      } catch (e: any) {
-        this.send({
-          ...responseInfo,
-          error: (e as OTError).info,
-        });
-        return;
-      }
-      this.send({
-        ...responseInfo,
-        snapshotAndOps,
-        presences: this.server.presencesMap[this.subscribeId] || {},
-      });
-    } else if (request.type === 'commitOp') {
-      this.handleCommitOpRequest(request);
     }
   };
 }

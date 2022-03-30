@@ -38,6 +38,12 @@ export class RemoteDeleteDocEvent extends Event<'remoteDeleteDoc'> {
   }
 }
 
+export class RollbackEvent extends Event<'rollback'> {
+  constructor() {
+    super('rollback');
+  }
+}
+
 export class RemotePresenceEvent<Pr> extends Event<'remotePresence'> {
   changed: Map<string, Pr | undefined> = new Map();
   constructor() {
@@ -64,4 +70,8 @@ export interface PresenceItem<P> {
 export interface PendingOp<P> {
   op: Op<P>;
   invert: Op<P>;
+}
+
+export interface ClientRollbackParams {
+  version: number;
 }

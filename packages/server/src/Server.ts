@@ -1,11 +1,5 @@
 import type { DB, PubSub } from './types';
-import type {
-  DeleteDocResponse,
-  PresenceIO,
-  Presence,
-  RemoteOpResponse,
-  Logger,
-} from 'ot-engine-common';
+import type { Presence, Logger, NotifyResponse } from 'ot-engine-common';
 import { Agent, AgentConfig } from './Agent';
 import { MemoryPubSub } from './MemoryPubSub';
 import { MemoryDB } from './MemoryDB';
@@ -77,10 +71,7 @@ export class Server {
 
   broadcast<S, P, Pr, Custom>(
     from: Agent<S, P, Pr, Custom>,
-    message:
-      | RemoteOpResponse<P>
-      | PresenceIO<Pr>
-      | Omit<DeleteDocResponse, 'seq'>,
+    message: NotifyResponse<P, Pr>,
   ) {
     this.pubSub.publish(from.subscribeId, message);
     if (message.type === 'presence') {

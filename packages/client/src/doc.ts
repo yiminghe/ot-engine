@@ -8,11 +8,11 @@ import {
   last,
   applyAndInvert,
   GetOpsResponse,
-  DeleteDocResponse,
   GetSnapshotResponse,
   Presence,
   isSameOp,
   Logger,
+  assertNever,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
 import { RemotePresence } from './RemotePresence';
@@ -25,8 +25,11 @@ import {
   RemotePresenceEvent,
   RemoteDeleteDocEvent,
   BeforeOpEvent,
+  RollbackEvent,
+  ClientRollbackParams,
 } from './types';
 import { UndoManager } from './UndoManager';
+import { getUuid } from './utils';
 
 interface DocConfig<S, P, Pr> {
   clientId: string;
@@ -51,6 +54,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     RemoteOpEvent<P>,
     RemoteDeleteDocEvent,
     RemotePresenceEvent<Pr>,
+    RollbackEvent,
   ]
 > {
   socket: WebSocket;
@@ -58,8 +62,6 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   config: Required<DocConfig<S, P, Pr>>;
 
   seq = 0;
-
-  uid = 0;
 
   undoManager: UndoManager<S, P, Pr>;
 
@@ -100,10 +102,6 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
   log(...msg: any[]) {
     return this.config.logger?.log(...msg);
-  }
-
-  getUuid() {
-    return '' + ++this.uid;
   }
 
   get clientId() {
@@ -179,6 +177,15 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     };
   }
 
+  clear() {
+    this.callMap.clear();
+    this.localPresence.clear();
+    this.remotePresence.clear();
+    this.undoManager.clear();
+    this.inflightOp = undefined;
+    this.pendingOps = [];
+  }
+
   destryoy() {
     const { socket } = this;
     socket.close();
@@ -228,12 +235,18 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   }
 
   async handleResponse(response: ClientResponse<S, P, Pr>) {
-    if (response.type === 'deleteDoc') {
-      const res: Omit<DeleteDocResponse, 'seq'> = response;
-      if (!('seq' in res)) {
-        const remoteDeleteDocEvent = new RemoteDeleteDocEvent();
-        return this.dispatchEvent(remoteDeleteDocEvent);
+    if ('seq' in response) {
+      const seq = response.seq;
+      const resolve = this.callMap.get(seq);
+      if (resolve) {
+        resolve(response);
       }
+    } else if (response.type === 'rollback') {
+      const rollbackEvent = new RollbackEvent();
+      return this.dispatchEvent(rollbackEvent);
+    } else if (response.type === 'deleteDoc') {
+      const remoteDeleteDocEvent = new RemoteDeleteDocEvent();
+      return this.dispatchEvent(remoteDeleteDocEvent);
     } else if (response.type === 'presences') {
       this.reloadPresences(response.presences);
     } else if (response.type === 'remoteOp') {
@@ -269,11 +282,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     } else if (response.type === 'presence') {
       this.remotePresence.onPresenceResponse(response);
     } else {
-      const seq = response.seq;
-      const resolve = this.callMap.get(seq);
-      if (resolve) {
-        resolve(response);
-      }
+      assertNever(response);
     }
   }
 
@@ -327,7 +336,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
       }
     }
     const op: Op<P> = {
-      id: this.getUuid(),
+      id: getUuid(),
       clientId: this.clientId,
       version: 0,
       content: opContent,
@@ -485,7 +494,16 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     return this.remotePresence.remotePresences;
   }
 
+  public async rollback({ version }: ClientRollbackParams) {
+    await this.send({
+      type: 'rollback',
+      version,
+      seq: 0,
+    });
+  }
+
   public async fetch() {
+    this.clear();
     const { otType } = this;
     const response = (await this.send({
       type: 'getSnapshot',

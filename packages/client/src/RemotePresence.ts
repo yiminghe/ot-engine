@@ -7,6 +7,19 @@ export class RemotePresence<S, P, Pr> {
 
   serverOps: Op<P>[] = [];
 
+  clear() {
+    this.serverOps = [];
+    const changed: Map<string, Pr | undefined> = new Map();
+    for (const clientId of Array.from(this.remotePresence.keys())) {
+      changed.set(clientId, undefined);
+    }
+    if (changed.size) {
+      const event = new RemotePresenceEvent<Pr>();
+      event.changed = changed;
+      this.doc.dispatchEvent(event);
+    }
+  }
+
   getOrCreatePresenceItem(clientId: string) {
     let item = this.remotePresence.get(clientId);
     if (!item) {

@@ -12,11 +12,13 @@ interface BaseRequest {
   seq: number;
 }
 
-export interface PresenceIO<Pr> {
+export interface PresenceRequest<Pr> {
   type: 'presence';
   clientId: string;
   presence: Presence<Pr>;
 }
+
+export type PresenceResponse<Pr> = PresenceRequest<Pr>;
 
 export interface GetSnapshotRequest
   extends Omit<GetSnapshotParams, AgentInfoKeys>,
@@ -40,6 +42,12 @@ export interface GetOpsRequest
   type: 'getOps';
 }
 
+export interface RollbackRequest
+  extends Omit<RollbackParams, AgentInfoKeys>,
+    BaseRequest {
+  type: 'rollback';
+}
+
 export interface CommitOpRequest<P>
   extends Omit<CommitOpParams<P>, AgentInfoKeys>,
     BaseRequest {
@@ -47,9 +55,10 @@ export interface CommitOpRequest<P>
 }
 
 export type ClientRequest<P, Pr> =
+  | RollbackRequest
   | PresencesRequest
   | DeleteDocRequest
-  | PresenceIO<Pr>
+  | PresenceRequest<Pr>
   | GetSnapshotRequest
   | GetOpsRequest
   | CommitOpRequest<P>;
@@ -69,6 +78,9 @@ export interface DeleteDocResponse extends BaseResponse {
   type: 'deleteDoc';
 }
 
+export type DeleteDocNotification = Omit<DeleteDocResponse, 'seq'>;
+export type RollbackNotification = Omit<RollbackResponse, 'seq'>;
+
 export interface PresencesResponse<Pr> {
   type: 'presences';
   presences: Record<string, Presence<Pr>>;
@@ -77,6 +89,10 @@ export interface PresencesResponse<Pr> {
 export interface GetOpsResponse<P> extends BaseResponse {
   type: 'getOps';
   ops?: Op<P>[];
+}
+
+export interface RollbackResponse extends BaseResponse {
+  type: 'rollback';
 }
 
 export interface CommitOpResponse<P> extends BaseResponse {
@@ -90,18 +106,27 @@ export interface RemoteOpResponse<P> {
   ops: Op<P>[];
 }
 
+export type NotifyResponse<P, Pr> =
+  | RemoteOpResponse<P>
+  | PresenceResponse<Pr>
+  | PresencesResponse<Pr>
+  | DeleteDocNotification
+  | RollbackNotification;
 export type ClientResponse<S, P, Pr> =
+  | NotifyResponse<P, Pr>
+  | RollbackResponse
   | DeleteDocResponse
-  | PresenceIO<Pr>
   | CommitOpResponse<P>
   | GetOpsResponse<P>
-  | PresencesResponse<Pr>
-  | GetSnapshotResponse<S, P, Pr>
-  | RemoteOpResponse<P>;
+  | GetSnapshotResponse<S, P, Pr>;
 
 export interface GetOpsParams extends AgentInfo {
   fromVersion: number;
   toVersion?: number;
+}
+
+export interface RollbackParams extends AgentInfo {
+  version: number;
 }
 
 export type DeleteDocParams = AgentInfo;
@@ -120,4 +145,8 @@ export interface SaveSnapshotParams<S> extends AgentInfo {
     content: S;
     version: number;
   };
+}
+
+export interface SaveLatestSnapshotParams<S> extends AgentInfo {
+  content: S;
 }

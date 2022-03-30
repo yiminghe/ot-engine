@@ -16,7 +16,7 @@ Operational transformation engine
 
 ```
 yarn
-cd examples/tree
+cd examples/rich-text
 yarn server
 yarn client
 ```

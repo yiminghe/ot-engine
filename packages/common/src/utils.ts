@@ -120,3 +120,7 @@ export function isSameOp<P>(op: Op<P> | undefined, other: Op<P> | undefined) {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function noop() {}
+
+export function assertNever(_: never) {
+  throw new Error('never!' + _);
+}

@@ -6,6 +6,7 @@ import type {
   CommitOpParams,
   SaveSnapshotParams,
   DeleteDocParams,
+  SaveLatestSnapshotParams,
 } from 'ot-engine-common';
 
 export interface DB {
@@ -15,6 +16,7 @@ export interface DB {
   ): Promise<SnapshotAndOps<S, P> | undefined>;
   commitOp<P>(params: CommitOpParams<P>): Promise<void>;
   saveSnapshot<S>(params: SaveSnapshotParams<S>): Promise<void>;
+  saveLatestSnapshot<S>(params: SaveLatestSnapshotParams<S>): Promise<void>;
   deleteDoc(params: DeleteDocParams): Promise<void>;
 }
 
