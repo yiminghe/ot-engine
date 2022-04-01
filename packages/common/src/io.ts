@@ -1,4 +1,4 @@
-import type { Op, SnapshotAndOps, Presence } from './core';
+import type { Op, SnapshotAndOps, Presence, Snapshot } from './core';
 
 type AgentInfo = {
   custom?: any;
@@ -141,12 +141,10 @@ export interface CommitOpParams<P> extends AgentInfo {
 }
 
 export interface SaveSnapshotParams<S> extends AgentInfo {
-  snapshot: {
-    content: S;
-    version: number;
-  };
+  snapshot: Snapshot<S>;
 }
 
 export interface SaveLatestSnapshotParams<S> extends AgentInfo {
   content: S;
+  rollback: boolean;
 }

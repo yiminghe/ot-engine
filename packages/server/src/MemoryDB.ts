@@ -21,6 +21,26 @@ function checkDeleted(doc: DBDoc | undefined) {
   }
 }
 
+function checkRollback(doc: DBDoc, fromVerson: number, toVersion?: number) {
+  const { snapshots } = doc;
+  const versions = Array.from(snapshots.keys());
+  versions.sort().reverse();
+  for (const v of versions) {
+    if (toVersion && v > toVersion) {
+      continue;
+    }
+    if (v <= fromVerson) {
+      return;
+    }
+    if (snapshots.get(v)!.rollback) {
+      throw new OTError({
+        subType: 'rollback',
+        detail: {},
+      });
+    }
+  }
+}
+
 export class DBDoc {
   deleted = false;
   ops: Map<number, Op<unknown>> = new Map();
@@ -43,6 +63,7 @@ export class MemoryDB implements DB {
     const ops: Op<P>[] = [];
     if (doc) {
       checkDeleted(doc);
+      checkRollback(doc, params.fromVersion, params.toVersion);
       const toVersion = params.toVersion ?? Infinity;
       for (let i = params.fromVersion; i <= toVersion; i++) {
         const op = doc.ops.get(i) as Op<P>;
@@ -129,6 +150,7 @@ export class MemoryDB implements DB {
         const version = lastVersion + 1;
         doc.snapshots.set(version, {
           content: params.content,
+          rollback: params.rollback,
           version,
         });
       }

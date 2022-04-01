@@ -99,10 +99,13 @@ export function last<T>(arr: T[], index = 1) {
   return arr && arr[arr.length - index];
 }
 
+export type OTErrorSubType = 'deleted' | 'rollback';
+export type OTErrorType = 'otError';
+
 export class OTError extends Error {
-  type = 'otError';
-  info: { subType: string; detail: any; type: string };
-  constructor(info: { subType: string; detail: any }) {
+  type: OTErrorType = 'otError';
+  info: { subType: OTErrorSubType; detail: any; type: OTErrorType };
+  constructor(info: { subType: OTErrorSubType; detail: any }) {
     super(info.subType);
     this.info = {
       ...info,

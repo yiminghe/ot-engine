@@ -13,6 +13,8 @@ import {
   isSameOp,
   Logger,
   assertNever,
+  OTErrorSubType,
+  OTErrorType,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
 import { RemotePresence } from './RemotePresence';
@@ -209,12 +211,16 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
           this.callMap.set(seq, (arg: any) => {
             this.callMap.delete(seq);
             if (arg.error) {
-              if (
-                arg.error.type === 'otError' &&
-                arg.error.subType === 'deleted'
-              ) {
-                const deletedEvent = new RemoteDeleteDocEvent();
-                this.dispatchEvent(deletedEvent);
+              const type: OTErrorType = arg.error.type;
+              if (type === 'otError') {
+                const subType: OTErrorSubType = arg.error.subType;
+                if (subType === 'deleted') {
+                  const deletedEvent = new RemoteDeleteDocEvent();
+                  this.dispatchEvent(deletedEvent);
+                } else if (subType === 'rollback') {
+                  const rollbackEvent = new RollbackEvent();
+                  this.dispatchEvent(rollbackEvent);
+                }
               }
               reject(arg.error);
             } else {

@@ -22,6 +22,7 @@
   "include": [
     "packages/**/src",
     "scripts/",
-    "examples/**/src"
+    "examples/**/src",
+    "examples/**/server"
   ]
 }

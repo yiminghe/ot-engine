@@ -21,6 +21,7 @@ async function initDoc(collection: string, docId: string) {
           children: [],
         },
       ],
+      rollback: false,
       version: 1,
     },
   });

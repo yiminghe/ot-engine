@@ -20,6 +20,7 @@ async function initDoc(collection: string, docId: string) {
     docId,
     snapshot: {
       content: [{ insert: 'Hi!' }],
+      rollback: false,
       version: 1,
     },
   });

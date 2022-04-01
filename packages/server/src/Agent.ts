@@ -137,14 +137,15 @@ export class Agent<S, P, Pr, Custom> {
     });
     if (snapshotAndOps) {
       const { content } = snapshotAndOps.snapshot;
-      let { version } = snapshotAndOps.snapshot;
+      let { version, rollback } = snapshotAndOps.snapshot;
       let snapshot = otType.create?.(content) ?? content;
       for (const op of snapshotAndOps.ops) {
         version = op.version + 1;
         snapshot = applyAndInvert(snapshot, op.content, false, otType)[0];
+        rollback = false;
       }
       snapshot = otType.deserialize?.(snapshot) ?? snapshot;
-      return { content: snapshot, version };
+      return { content: snapshot, version, rollback };
     }
   }
   async checkAndSaveSnapshot(op: Op<P>) {
@@ -234,6 +235,7 @@ export class Agent<S, P, Pr, Custom> {
       server.db.saveLatestSnapshot({
         ...agentInfo,
         content: snapshot.content,
+        rollback: true,
       });
       this.send({
         ...responseInfo,
