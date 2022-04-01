@@ -51,6 +51,7 @@ export interface Op<P> {
 
 export interface Snapshot<S> {
   version: number;
+  rollback?: boolean;
   content: S;
 }
 
@@ -86,10 +87,7 @@ export interface SaveSnapshotParams<S> {
   custom?: any;
   collection: string;
   docId: string;
-  snapshot: {
-    content: S;
-    version: number;
-  };
+  snapshot: Snapshot<S>;
 }
 
 export interface DB {
@@ -129,6 +127,8 @@ export declare class Server {
 ## ot-engine/client
 
 ```ts
+import { Event,EventTarget } from 'ts-event-target';
+
 interface DocConfig<S,P,Pr> {
     socket: WebSocket;
     otType: OTType<S,P,Pr>;
@@ -136,7 +136,6 @@ interface DocConfig<S,P,Pr> {
     undoStackLimit?: number;
     cacheServerOpsLimit?: number;
 }
-import { Event,EventTarget } from 'ts-event-target';
 declare class OpEvent<P> extends Event<'op'> {
     ops: P[];
     undoRedo: boolean;
@@ -152,7 +151,15 @@ declare class BeforeOpEvent<P> extends Event<'beforeOp'> {
 declare class RemoteDeleteDocEvent extends Event<'remoteDeleteDoc'> {
   constructor();
 }
-export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>, BeforeOpEvent<P>, RemoteDeleteDocEvent]> {
+declare class RollbackEvent extends Event<'rollback'> {
+  constructor();
+}
+export declare class Doc<S,P,Pr> extends EventTarget<[
+  OpEvent<P>,
+  BeforeOpEvent<P>,
+  RemoteDeleteDocEvent,
+  RollbackEvent
+  ]> {
     constructor(config: DocConfig<S,P,Pr>);
     canUndo(): boolean;
     canRedo(): boolean;
@@ -162,6 +169,7 @@ export declare class Doc<S,P,Pr> extends EventTarget<[OpEvent<P>, BeforeOpEvent<
     submitOp(opContent: P): void;
     submitPresence(presence: Pr): void;
     delete(): Promise<void>;
+    rollback(params: {version:number}): Promise<void>;
     fetch(): Promise<Snapshot<S>>;
     data:S;
     remotePresences:Record<string,Pr>;

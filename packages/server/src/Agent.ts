@@ -232,10 +232,13 @@ export class Agent<S, P, Pr, Custom> {
     const { server, agentInfo } = this;
     const snapshot = await this.getSnapshotByVersion(request.version);
     if (snapshot) {
-      server.db.saveLatestSnapshot({
+      server.db.saveSnapshot({
         ...agentInfo,
-        content: snapshot.content,
-        rollback: true,
+        snapshot: {
+          content: snapshot.content,
+          version: 0,
+          rollback: true,
+        },
       });
       this.send({
         ...responseInfo,

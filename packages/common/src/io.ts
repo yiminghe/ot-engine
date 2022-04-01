@@ -143,8 +143,3 @@ export interface CommitOpParams<P> extends AgentInfo {
 export interface SaveSnapshotParams<S> extends AgentInfo {
   snapshot: Snapshot<S>;
 }
-
-export interface SaveLatestSnapshotParams<S> extends AgentInfo {
-  content: S;
-  rollback: boolean;
-}

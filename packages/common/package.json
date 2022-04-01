@@ -1,6 +1,6 @@
 {
   "name": "ot-engine-common",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",

@@ -2,15 +2,15 @@ import { Doc } from './doc';
 import { Op, Presence, transformPresence } from 'ot-engine-common';
 import { RemoteOpEvent, RemotePresenceEvent, PresenceItem } from './types';
 
-export class RemotePresence<S, P, Pr> {
-  remotePresence: Map<string, PresenceItem<Pr>> = new Map();
+export class RemotePresenceManager<S, P, Pr> {
+  remotePresenceMap: Map<string, PresenceItem<Pr>> = new Map();
 
   serverOps: Op<P>[] = [];
 
   clear() {
     this.serverOps = [];
     const changed: Map<string, Pr | undefined> = new Map();
-    for (const clientId of Array.from(this.remotePresence.keys())) {
+    for (const clientId of Array.from(this.remotePresenceMap.keys())) {
       changed.set(clientId, undefined);
     }
     if (changed.size) {
@@ -21,10 +21,10 @@ export class RemotePresence<S, P, Pr> {
   }
 
   getOrCreatePresenceItem(clientId: string) {
-    let item = this.remotePresence.get(clientId);
+    let item = this.remotePresenceMap.get(clientId);
     if (!item) {
       item = {};
-      this.remotePresence.set(clientId, item);
+      this.remotePresenceMap.set(clientId, item);
     }
     return item;
   }
@@ -41,8 +41,8 @@ export class RemotePresence<S, P, Pr> {
   get remotePresences() {
     // undefined means not transformed(not valid to use)
     const ret: Map<string, Pr | undefined> = new Map();
-    for (const clientId of Array.from(this.remotePresence.keys())) {
-      const { normal } = this.remotePresence.get(clientId)!;
+    for (const clientId of Array.from(this.remotePresenceMap.keys())) {
+      const { normal } = this.remotePresenceMap.get(clientId)!;
       ret.set(clientId, normal?.content);
     }
     return ret;
@@ -59,8 +59,8 @@ export class RemotePresence<S, P, Pr> {
         changed,
       );
     }
-    const { remotePresence } = this;
-    for (const clientId of Array.from(remotePresence.keys())) {
+    const { remotePresenceMap } = this;
+    for (const clientId of Array.from(remotePresenceMap.keys())) {
       if (!presences[clientId]) {
         this.onPresenceResponse(
           {
@@ -110,7 +110,7 @@ export class RemotePresence<S, P, Pr> {
     } else {
       if (!changeSet) {
         const event = new RemotePresenceEvent<Pr>();
-        this.remotePresence.delete(clientId);
+        this.remotePresenceMap.delete(clientId);
         // undefined means offline,need to delete from UI
         event.changed.set(clientId, undefined);
         doc.dispatchEvent(event);
@@ -137,9 +137,10 @@ export class RemotePresence<S, P, Pr> {
   };
 
   syncRemotePresences(ops: P[], clientIds: string[], onlyNormal = false) {
+    console.log('syncRemotePresences', ops, clientIds, onlyNormal);
     const changed = new Map();
-    for (const clientId of Array.from(this.remotePresence.keys())) {
-      const item = this.remotePresence.get(clientId)!;
+    for (const clientId of Array.from(this.remotePresenceMap.keys())) {
+      const item = this.remotePresenceMap.get(clientId)!;
       const { pending, normal } = item;
       if (!onlyNormal && pending) {
         const p = this.syncPresence(clientId, pending);

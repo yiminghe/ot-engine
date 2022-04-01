@@ -9,7 +9,6 @@ import {
   Snapshot,
   DeleteDocParams,
   OTError,
-  SaveLatestSnapshotParams,
 } from 'ot-engine-common';
 
 function checkDeleted(doc: DBDoc | undefined) {
@@ -135,26 +134,20 @@ export class MemoryDB implements DB {
     ops.set(params.op.version, params.op);
   }
   async saveSnapshot<S>(params: SaveSnapshotParams<S>) {
-    const { snapshot } = params;
-    this.getOrCreateDoc(params).snapshots.set(snapshot.version, snapshot);
-  }
-
-  async saveLatestSnapshot<S>(params: SaveLatestSnapshotParams<S>) {
-    const doc = this.docs.get(getDocKey(params));
+    let { snapshot } = params;
+    let doc = this.docs.get(getDocKey(params));
     if (doc) {
       checkDeleted(doc);
+    }
+    doc = this.getOrCreateDoc(params);
+    if (!snapshot.version) {
+      snapshot = { ...snapshot };
       const lastOp = last(Array.from(doc.ops.keys())) || 0;
       const lastSnapshot = last(Array.from(doc.snapshots.keys())) || 0;
       const lastVersion = Math.max(lastOp, lastSnapshot);
-      if (lastVersion) {
-        const version = lastVersion + 1;
-        doc.snapshots.set(version, {
-          content: params.content,
-          rollback: params.rollback,
-          version,
-        });
-      }
+      snapshot.version = lastVersion + 1;
     }
+    doc.snapshots.set(snapshot.version, snapshot);
   }
 
   async deleteDoc(params: DeleteDocParams): Promise<void> {

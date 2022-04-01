@@ -86,13 +86,14 @@ function initialiseQuill(remotePresences: Map<string, any>) {
       const range: any = presences.get(id)!;
       if (!range) {
         cursors.removeCursor(id);
-        return;
+        continue;
       }
       colors[id] = colors[id] || tinycolor.random().toHexString();
       const name = range.name || 'Anonymous';
       cursors.createCursor(id, name, colors[id]);
       cursors.moveCursor(id, range);
     }
+    document.getElementById('count')!.innerHTML = doc.remotePresences.size + '';
   }
 
   if (remotePresences.size) {
@@ -101,6 +102,10 @@ function initialiseQuill(remotePresences: Map<string, any>) {
 
   doc.addEventListener('remotePresence', (e) => {
     updateRemotePresence(e.changed);
+  });
+
+  doc.submitPresence({
+    name: nameInput.value,
   });
 
   return quill;

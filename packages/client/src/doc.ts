@@ -17,8 +17,8 @@ import {
   OTErrorType,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
-import { RemotePresence } from './RemotePresence';
-import { LocalPresence } from './LocalPresence';
+import { RemotePresenceManager } from './RemotePresence';
+import { LocalPresenceManager } from './LocalPresence';
 import {
   NoPendingEvent,
   OpEvent,
@@ -67,9 +67,9 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
   undoManager: UndoManager<S, P, Pr>;
 
-  remotePresence: RemotePresence<S, P, Pr>;
+  remotePresenceManager: RemotePresenceManager<S, P, Pr>;
 
-  localPresence: LocalPresence<S, P, Pr>;
+  localPresenceManager: LocalPresenceManager<S, P, Pr>;
 
   closed = false;
 
@@ -94,12 +94,12 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     this.bindToSocket(config.socket);
     this.socket = config.socket;
     this.undoManager = new UndoManager<S, P, Pr>(this);
-    this.remotePresence = new RemotePresence<S, P, Pr>(this);
-    this.localPresence = new LocalPresence<S, P, Pr>(this);
+    this.remotePresenceManager = new RemotePresenceManager<S, P, Pr>(this);
+    this.localPresenceManager = new LocalPresenceManager<S, P, Pr>(this);
   }
 
   public get presence() {
-    return this.localPresence.value;
+    return this.localPresenceManager.value;
   }
 
   log(...msg: any[]) {
@@ -181,8 +181,8 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
   clear() {
     this.callMap.clear();
-    this.localPresence.clear();
-    this.remotePresence.clear();
+    this.localPresenceManager.clear();
+    this.remotePresenceManager.clear();
     this.undoManager.clear();
     this.inflightOp = undefined;
     this.pendingOps = [];
@@ -199,7 +199,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
   reloadPresences(presences: Record<string, Presence<Pr>>, fire = true) {
     if (this.data) {
-      return this.remotePresence.reload(presences, fire);
+      return this.remotePresenceManager.reload(presences, fire);
     }
   }
 
@@ -286,7 +286,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         this.fireOpEvent(opContents, clientIds, false);
       }
     } else if (response.type === 'presence') {
-      this.remotePresence.onPresenceResponse(response);
+      this.remotePresenceManager.onPresenceResponse(response);
     } else {
       assertNever(response);
     }
@@ -301,7 +301,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   }
 
   public submitPresence(presence: Pr) {
-    this.localPresence.submit(presence);
+    this.localPresenceManager.submit(presence);
   }
 
   waitNoPending() {
@@ -337,6 +337,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
         if (composed && composedInvert) {
           lastPendingOp.op.content = composed;
           lastPendingOp.invert.content = composedInvert;
+          this.fireOpEvent([opContent], [this.clientId], true, false);
           return;
         }
       }
@@ -497,7 +498,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   }
 
   public get remotePresences() {
-    return this.remotePresence.remotePresences;
+    return this.remotePresenceManager.remotePresences;
   }
 
   public async rollback({ version }: ClientRollbackParams) {

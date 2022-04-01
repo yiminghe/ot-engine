@@ -2,7 +2,7 @@ import { transformPresence } from 'ot-engine-common';
 import { Doc } from './doc';
 import { OpEvent } from './types';
 
-export class LocalPresence<S, P, Pr> {
+export class LocalPresenceManager<S, P, Pr> {
   value: Pr | undefined;
 
   sending = false;

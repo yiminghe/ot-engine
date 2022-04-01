@@ -27,7 +27,7 @@ export interface Op<P> {
 
 export interface Snapshot<P> {
   version: number;
-  rollback: boolean;
+  rollback?: boolean;
   content: P;
 }
 
