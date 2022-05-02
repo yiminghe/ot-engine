@@ -26,12 +26,15 @@ async function initDoc(collection: string, docId: string) {
   });
 }
 
+const build = process.env.BUILD_MY;
+const port = build ? 80 : 8080;
+
 function startServer() {
   // Create a web server to serve files and listen to WebSocket connections
   const app = express();
   const server = http.createServer(app);
   const inited: Map<string, Promise<void>> = new Map();
-
+  app.use(express.static('build'));
   // Connect any incoming WebSocket
   const wss = new WebSocket.Server({ server: server });
   wss.on('connection', async function (ws, req) {
@@ -58,8 +61,8 @@ function startServer() {
     otServer.printAgentSize();
   });
 
-  server.listen(8080);
-  console.log('Listening on http://localhost:8080');
+  server.listen(port);
+  console.log('Listening on http://localhost:' + port);
 }
 
 startServer();

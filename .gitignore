@@ -19,7 +19,7 @@
 /coverage
 
 # production
-/build
+build
 /pkg
 
 # misc

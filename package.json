@@ -13,8 +13,8 @@
     "examples/*"
   ],
   "scripts": {
-    "start": "yarn run rich-text",
-    "rich-text": "cd examples/rich-text && yarn run start",
+    "dev": "cd examples/rich-text && yarn run start",
+    "start": "cd examples/rich-text && yarn run build",
     "pub": "yarn run sync-md && sh scripts/pub.sh",
     "test": "echo 0",
     "sync-md": "ts-node scripts/syncMd.ts",

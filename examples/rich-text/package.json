@@ -2,6 +2,7 @@
   "name": "rich-text-example",
   "private": true,
   "scripts": {
+    "build":"react-scripts build && BUILD_MY=1 ts-node server/server.ts",
     "start": "run-p client server",
     "client": "react-scripts start",
     "server": "ts-node server/server.ts"
