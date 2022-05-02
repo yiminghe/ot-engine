@@ -15,9 +15,9 @@ const docId = 'quill';
 const clientId = v4(); // userId+Date.now();
 // Open WebSocket connection
 const socket: any = new ReconnectingWebSocket(
-  'ws://' +
-    window.location.host.replace(':3000', ':8080') +
-    `?collection=${collection}&docId=${docId}&clientId=${clientId}`,
+  `${location.protocol === 'https:' ? 'wss' : 'ws'}://` +
+  location.host.replace(':3000', ':8080') +
+  `?collection=${collection}&docId=${docId}&clientId=${clientId}`,
 );
 export const doc = new Doc({
   socket,

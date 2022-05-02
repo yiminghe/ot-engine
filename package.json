@@ -13,8 +13,9 @@
     "examples/*"
   ],
   "scripts": {
-    "dev": "cd examples/rich-text && yarn run start",
-    "start": "cd examples/rich-text && yarn run build",
+    "build":"cd examples/rich-text && yarn run build",
+    "dev": "cd examples/rich-text && yarn run dev",
+    "start": "cd examples/rich-text && yarn run start",
     "pub": "yarn run sync-md && sh scripts/pub.sh",
     "test": "echo 0",
     "sync-md": "ts-node scripts/syncMd.ts",
@@ -24,10 +25,9 @@
     "prettier": "prettier --write \"{packages,scripts,examples}/**/*.{js,tsx,ts,jsx}\""
   },
   "engines": {
-    "yarn": "3.x",
     "node": "16.x"
   },
-  "devDependencies": {
+  "dependencies": {
     "@babel/cli": "7.x",
     "@babel/core": "7.x",
     "@babel/node": "7.x",

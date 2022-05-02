@@ -6,20 +6,15 @@
 
 Operational transformation engine
 
+## example
+
+https://ot-engine-rich-text.herokuapp.com/
+
 ## features
 
 - typescript full stack
 - support local undo/redo
 - support presence(cursors)
-
-## demo
-
-```
-yarn
-yarn rich-text
-```
-
-open: http://localhost:3000/
 
 ## ot type definition
 
@@ -174,10 +169,20 @@ export declare class Doc<S,P,Pr> extends EventTarget<[
 }
 ```
 
+## dev
+
+```
+yarn
+yarn run dev
+```
+
+open: http://localhost:3000/
+
 ## release workflow
 
 ```
 yarn version check -i
 yarn version apply --all
 yarn run pub
+git push heroku main:master --force
 ```
