@@ -16,9 +16,7 @@ Operational transformation engine
 
 ```
 yarn
-cd examples/rich-text
-yarn server
-yarn client
+yarn rich-text
 ```
 
 open: http://localhost:3000/

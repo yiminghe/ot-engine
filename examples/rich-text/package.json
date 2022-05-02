@@ -2,6 +2,7 @@
   "name": "rich-text-example",
   "private": true,
   "scripts": {
+    "start": "run-p client server",
     "client": "react-scripts start",
     "server": "ts-node server/server.ts"
   },
@@ -9,6 +10,7 @@
   "devDependencies": {
     "@types/node": "^12.0.0",
     "@yiminghe/react-scripts": "5.x",
+    "npm-run-all": "4.x",
     "ts-node": "10.x",
     "typescript": "4.x"
   },
