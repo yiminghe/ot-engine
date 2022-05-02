@@ -23,6 +23,10 @@
     "check": "yarn run lint && tsc --noEmit",
     "prettier": "prettier --write \"{packages,scripts,examples}/**/*.{js,tsx,ts,jsx}\""
   },
+  "engines": {
+    "yarn": "3.x",
+    "node": "16.x"
+  },
   "devDependencies": {
     "@babel/cli": "7.x",
     "@babel/core": "7.x",
