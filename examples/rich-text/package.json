@@ -8,14 +8,12 @@
     "server": "ts-node server/server.ts"
   },
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@types/node": "^12.0.0",
     "@yiminghe/react-scripts": "5.x",
     "npm-run-all": "4.x",
     "ts-node": "10.x",
-    "typescript": "4.x"
-  },
-  "dependencies": {
+    "typescript": "4.x",
     "@teamwork/websocket-json-stream": "^2.0.0",
     "express": "^4.17.1",
     "ot-engine": "0.0.12",
