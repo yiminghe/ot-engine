@@ -2,7 +2,7 @@
 
 [![NPM version](https://badge.fury.io/js/ot-engine.png)](http://badge.fury.io/js/ot-engine)
 [![NPM downloads](http://img.shields.io/npm/dm/ot-engine.svg)](https://npmjs.org/package/ot-engine)
-[![Build Status](https://app.travis-ci.com/yiminghe/ot-engine.svg?branch=main)](https://app.travis-ci.com/github/yiminghe/ot-engine)
+![Build Status](https://github.com/yiminghe/ot-engine/actions/workflows/ci.yaml/badge.svg)
 
 Operational transformation engine
 
@@ -172,8 +172,9 @@ export declare class Doc<S,P,Pr> extends EventTarget<[
 ## dev
 
 ```
-yarn
-yarn run dev
+npm i pnpm@8.x -g
+pnpm i
+pnpm dev
 ```
 
 open: http://localhost:3000/
@@ -181,8 +182,6 @@ open: http://localhost:3000/
 ## release workflow
 
 ```
-yarn version check -i
-yarn version apply --all
-yarn run pub
+npm run pub
 git push heroku main:master --force
 ```

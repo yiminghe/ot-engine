@@ -17,7 +17,6 @@
             "--rootDir",
             "src"
           ],
-          "yarn": true,
           "tsconfig": "tsconfig.build.json"
         }
       ],
@@ -44,9 +43,8 @@
     "typescript": "^4.6.2"
   },
   "scripts": {
-    "pub": "yarn run build && cd pkg && npm publish",
+    "pub": "pnpm build && cd pkg && npm publish",
     "build": "pika-pack build"
   },
-  "main": "src/index.ts",
-  "packageManager": "yarn@3.2.0"
+  "main": "src/index.ts"
 }

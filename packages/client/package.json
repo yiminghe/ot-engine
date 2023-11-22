@@ -18,7 +18,6 @@
             "--rootDir",
             "src"
           ],
-          "yarn": true,
           "tsconfig": "tsconfig.build.json"
         }
       ],
@@ -45,12 +44,11 @@
     "typescript": "^4.6.2"
   },
   "scripts": {
-    "pub": "yarn run build && cd pkg && npm publish",
+    "pub": "pnpm build && cd pkg && npm publish",
     "build": "pika-pack build"
   },
   "dependencies": {
     "ot-engine-common": "0.0.12",
     "ts-event-target": "0.1.x"
-  },
-  "packageManager": "yarn@3.2.0"
+  }
 }

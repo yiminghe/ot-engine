@@ -15,10 +15,9 @@ Operational transformation engine
 ## demo
 
 ```
-yarn
+pnpm
 cd examples/rich-text
-yarn server
-yarn client
+pnpm dev
 ```
 
 open: http://localhost:3000/
@@ -179,7 +178,5 @@ export declare class Doc<S,P,Pr> extends EventTarget<[
 ## release workflow
 
 ```
-yarn version check -i
-yarn version apply --all
-yarn run pub
+pnpm run pub
 ```
