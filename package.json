@@ -8,24 +8,25 @@
     "type": "git",
     "url": "git@github.com:yiminghe/ot-engine.git"
   },
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
+  "pnpm": {
+    "overrides": {
+      "react-dnd": "11.x"
+    }
+  },
   "scripts": {
-    "build": "cd examples/rich-text && yarn run build",
-    "dev": "cd examples/rich-text && yarn run dev",
-    "start": "cd examples/rich-text && yarn run start",
-    "pub": "yarn run sync-md && sh scripts/pub.sh",
+    "build": "cd examples/rich-text && npm run build",
+    "dev": "cd examples/rich-text && npm run dev",
+    "start": "cd examples/rich-text && npm run start",
+    "pub": "npm run sync-md && sh scripts/pub.sh",
     "test": "echo 0",
     "sync-md": "ts-node scripts/syncMd.ts",
-    "lint-fix": "yarn run lint --fix",
-    "lint": "yarn run eslint . --ext .ts",
-    "check": "yarn run lint && tsc --noEmit",
+    "lint-fix": "npm run lint --fix",
+    "lint": "eslint . --ext .ts",
+    "check": "npm run lint && tsc --noEmit",
     "prettier": "prettier --write \"{packages,scripts,examples}/**/*.{js,tsx,ts,jsx}\""
   },
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
   },
   "dependencies": {
     "@babel/cli": "7.x",
@@ -49,5 +50,5 @@
     "ts-node": "^10.7.0",
     "typescript": "^4.6.2"
   },
-  "packageManager": "yarn@3.2.2"
+  "packageManager": "pnpm@8.10.5"
 }

@@ -10,6 +10,13 @@
   },
   "license": "MIT",
   "dependencies": {
+    "uuid":"8.x",
+   
+    "qs":"6.x",
+    "@types/uuid":"8.x",
+    "@types/qs":"6.x",
+    "@types/ws":"7.x",
+    "@types/express":"4.x",
     "@teamwork/websocket-json-stream": "^2.0.0",
     "@types/node": "^12.0.0",
     "@yiminghe/react-scripts": "5.x",
@@ -36,6 +43,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "packageManager": "yarn@3.2.0"
+  }
 }
