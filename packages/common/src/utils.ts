@@ -24,11 +24,11 @@ export function applyAndInvert<S, P, Pr, I extends boolean>(
     } else if (otType.invert) {
       ret[1] = otType.invert(op);
     } else {
-      throw new Error('lack invert/invertWithDoc in otType: ' + otType.name);
+      throw new Error(`lack invert/invertWithDoc in otType: ${otType.name}`);
     }
   }
   if (!otType.apply) {
-    throw new Error('lack apply in otType: ' + otType.name);
+    throw new Error(`lack apply in otType: ${otType.name}`);
   }
   ret[0] = otType.apply(snapshot, op);
   return ret as any;
@@ -36,11 +36,12 @@ export function applyAndInvert<S, P, Pr, I extends boolean>(
 
 export function transformPresence<S, P, Pr>(
   presenceClientId: string,
-  presence: Pr,
+  presence_: Pr,
   refOps: P[],
   clientIds: string[],
   otType: OTType<S, P, Pr>,
 ) {
+  let presence = presence_;
   if (otType.transformPresence) {
     for (let i = 0; i < refOps.length; i++) {
       const op = refOps[i];
@@ -96,7 +97,7 @@ function transform(
 }
 
 export function last<T>(arr: T[], index = 1) {
-  return arr && arr[arr.length - index];
+  return arr?.[arr.length - index];
 }
 
 export type OTErrorSubType = 'deleted' | 'rollback';
@@ -121,9 +122,8 @@ export function isSameOp<P>(op: Op<P> | undefined, other: Op<P> | undefined) {
   return op === other;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 export function noop() {}
 
 export function assertNever(_: never) {
-  throw new Error('never!' + _);
+  throw new Error(`never!${_}`);
 }

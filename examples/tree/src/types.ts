@@ -1,10 +1,10 @@
 import {
-  Path as OtPath,
-  TreeNode as OtTreeNode,
+  EditNodeOperation as OtEditNameOperation,
   InsertNodeOperation as OtInsertNodeOperation,
   MoveNodeOperation as OtMoveNodeOperation,
+  Path as OtPath,
   RemoveNodeOperation as OtRemoveNodeOperation,
-  EditNodeOperation as OtEditNameOperation,
+  TreeNode as OtTreeNode,
 } from 'ot-tree';
 
 type BaseTreeNode = {

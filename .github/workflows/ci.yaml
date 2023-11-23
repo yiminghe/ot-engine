@@ -1,8 +1,6 @@
 name: Node.js CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -44,5 +42,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - run: pnpm check
+      - run: git fetch origin $GITHUB_BASE_REF
+      - run: pnpm run -r --filter "...[origin/$GITHUB_BASE_REF]" --changed-files-ignore-pattern="**/*.{md,sh}" lint
       - run: pnpm test

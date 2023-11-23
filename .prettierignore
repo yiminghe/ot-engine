@@ -1,2 +1,73 @@
-*.d.ts
-node_modules
+#-------------------------------------------------------------------------------------------------------------------
+# Keep this section in sync with .gitignore
+#-------------------------------------------------------------------------------------------------------------------
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+
+
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# OS X temporary files
+.DS_Store
+
+# Heft
+.heft
+
+# Other files
+*.tmp
+.vscode/
+.turbo
+pkg
+
+output/
+
+.next
+
+out/
+
+output_resource/
+
+.plasmo/
+
+build/
+
+log/
+
+tsconfig.tsbuildinfo
+
+case-result
+#-------------------------------------------------------------------------------------------------------------------
+# Prettier-specific overrides
+#-------------------------------------------------------------------------------------------------------------------
+
+CHANGELOG.*
+
+# Package manager files
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+shrinkwrap.json
+ve.css
+
+# Prettier reformats code blocks inside Markdown, which affects rendered output
+*.md

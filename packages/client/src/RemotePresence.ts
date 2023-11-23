@@ -1,6 +1,6 @@
-import { Doc } from './doc';
 import { Op, Presence, transformPresence } from 'ot-engine-common';
-import { RemoteOpEvent, RemotePresenceEvent, PresenceItem } from './types';
+import { Doc } from './doc';
+import { PresenceItem, RemoteOpEvent, RemotePresenceEvent } from './types';
 
 export class RemotePresenceManager<S, P, Pr> {
   remotePresenceMap: Map<string, PresenceItem<Pr>> = new Map();

@@ -1,11 +1,11 @@
 import type {
-  Op,
-  SnapshotAndOps,
+  CommitOpParams,
+  DeleteDocParams,
   GetOpsParams,
   GetSnapshotParams,
-  CommitOpParams,
+  Op,
   SaveSnapshotParams,
-  DeleteDocParams,
+  SnapshotAndOps,
 } from 'ot-engine-common';
 
 export interface DB {

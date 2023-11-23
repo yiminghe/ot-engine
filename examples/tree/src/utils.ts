@@ -1,8 +1,8 @@
-import { ExpandInfo, TreeNode, ViewTreeNode, TreeData, Path } from './types';
 import { utils as pathUtils } from 'ot-tree';
 import { v4 as uuid } from 'uuid';
+import { ExpandInfo, Path, TreeData, TreeNode, ViewTreeNode } from './types';
 export function last<O = any>(args: O[]) {
-  return args && args[args.length - 1];
+  return args?.[args.length - 1];
 }
 
 export function traverse(model: TreeNode, fn: (node: TreeNode) => boolean) {
@@ -64,7 +64,7 @@ export function getParentsAndSelfAtNodePath(
   };
   for (const i of path) {
     n = i;
-    parent = parent.children && parent.children[n];
+    parent = parent.children?.[n];
     if (!parent) {
       return ret;
     }
@@ -139,11 +139,12 @@ export function getIdPathFromPath(path: Path, treeData: TreeNode[]): string[] {
 }
 
 export function transformNewPathToOldPath(
-  toPath: Path,
+  toPath_: Path,
   fromPath: Path,
   newTreeData: TreeData,
   oldTreeData: TreeData,
 ) {
+  let toPath = toPath_;
   if (pathUtils.isSibling(toPath, fromPath)) {
     return toPath;
   }

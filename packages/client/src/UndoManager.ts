@@ -1,4 +1,4 @@
-import { Op, transformType, last, isSameOp } from 'ot-engine-common';
+import { Op, isSameOp, last, transformType } from 'ot-engine-common';
 import { Doc } from './doc';
 import { PendingOp, RemoteOpEvent } from './types';
 

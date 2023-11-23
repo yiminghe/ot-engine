@@ -1,0 +1,7 @@
+{
+  "pipeline": {
+    "lint": {
+      "inputs": ["src/**/*", "tests/**/*"]
+    }
+  }
+}

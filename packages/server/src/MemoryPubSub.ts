@@ -1,20 +1,14 @@
-import type { PubSub } from './types';
 import { Event, EventTarget } from 'ts-event-target';
+import type { PubSub } from './types';
 
 class PubSubEvent<D> extends Event<string> {
   data: D | undefined;
-  constructor(type: string) {
-    super(type);
-  }
 }
 
 export class MemoryPubSub<D>
   extends EventTarget<[PubSubEvent<D>]>
   implements PubSub<D>
 {
-  constructor() {
-    super();
-  }
   subscribe(channel: string, callback: (e: PubSubEvent<D>) => void) {
     this.addEventListener(channel, callback);
   }
