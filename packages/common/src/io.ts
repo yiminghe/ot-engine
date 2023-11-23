@@ -1,4 +1,4 @@
-import type { Op, SnapshotAndOps, Presence, Snapshot } from './core';
+import type { Op, Presence, Snapshot, SnapshotAndOps } from './core';
 
 type AgentInfo = {
   custom?: any;

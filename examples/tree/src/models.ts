@@ -1,17 +1,17 @@
 import { insertOp, moveOp } from 'ot-tree';
 import { TreePresence } from 'ot-tree';
 import { doc } from './doc';
-import { TreeNode, Model, Operation, ExpandInfo } from './types';
+import { ExpandInfo, Model, Operation, TreeNode } from './types';
 import {
-  getPathFromIdPath,
+  getIdPathFromPath,
   getIdsByDescendentsAndSelf,
   getNodeAtPath,
+  getParentsAndSelfAtNodePath,
+  getPathFromIdPath,
+  last,
   transformLowerSiblingCountsToPath,
   transformNewPathToOldPath,
   uuidv4,
-  getParentsAndSelfAtNodePath,
-  getIdPathFromPath,
-  last,
 } from './utils';
 
 export const model = {
@@ -122,7 +122,7 @@ export const app = {
             clients.splice(index, 1);
           }
         }
-        if (path && path.length) {
+        if (path?.length) {
           const id = last(getIdPathFromPath(path, rootState.model.treeData));
           remoteSelected[id] = remoteSelected[id] || [];
           remoteSelected[id].push(clientId);

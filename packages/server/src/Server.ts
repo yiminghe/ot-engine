@@ -1,8 +1,8 @@
-import type { DB, PubSub } from './types';
-import type { Presence, Logger, NotifyResponse } from 'ot-engine-common';
+import type { Logger, NotifyResponse, Presence } from 'ot-engine-common';
 import { Agent, AgentConfig } from './Agent';
-import { MemoryPubSub } from './MemoryPubSub';
 import { MemoryDB } from './MemoryDB';
+import { MemoryPubSub } from './MemoryPubSub';
+import type { DB, PubSub } from './types';
 
 export interface ServerConfig {
   saveInterval?: number;
@@ -26,7 +26,8 @@ export class Server {
 
   presencesMap: Record<string, Record<string, Presence<any>>> = {};
 
-  constructor(config: ServerConfig = {}) {
+  constructor(config_: ServerConfig = {}) {
+    let config = config_;
     config = this.config = {
       logger: undefined!,
       saveInterval: 50,
@@ -45,8 +46,8 @@ export class Server {
   }
 
   onPresence = ({ data }: { data: PresenceMessage }) => {
-    const docMap = (this.presencesMap[data.subscribeId] =
-      this.presencesMap[data.subscribeId] || {});
+    this.presencesMap[data.subscribeId] ??= {};
+    const docMap = this.presencesMap[data.subscribeId];
     if (data.presence.content) {
       docMap[data.clientId] = data.presence;
     } else {
@@ -116,7 +117,7 @@ export class Server {
   printAgentSize() {
     for (const key of Array.from(this.agentsMap.keys())) {
       const set = this.agentsMap.get(key)!;
-      this.log(key + ' agent count: ' + set.size);
+      this.log(`${key} agent count: ${set.size}`);
     }
   }
 

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <title>Rich Text</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
-
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
 
 <div class="controls">
   online remote users count: <span id="count">0</span>
@@ -14,21 +15,19 @@
   <button id="redo" disabled>redo</button>
 </div>
 
-<center>
-  Open a new window to see another client!
-</center>
+<center>Open a new window to see another client!</center>
 
 <div id="editor"></div>
 
 <div id="footer"></div>
 <script>
-    setTimeout(() => {
-        document.getElementById('footer').innerHTML = `
+  setTimeout(() => {
+    document.getElementById('footer').innerHTML = `
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css" />
 
 <a class="github-fork-ribbon" href="https://github.com/yiminghe/ot-engine" data-ribbon="Fork me on GitHub"
 title="Fork me on GitHub">Fork me on GitHub</a>
 `;
-    }, 1000);
+  }, 1000);
 </script>

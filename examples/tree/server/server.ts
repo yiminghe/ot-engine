@@ -3,7 +3,7 @@ import express from 'express';
 import { Server } from 'ot-engine/server';
 import WebSocket from 'ws';
 import qs from 'qs';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
 // @ts-ignore
 import WebSocketJSONStream from '@teamwork/websocket-json-stream';
 import { type } from 'ot-tree';

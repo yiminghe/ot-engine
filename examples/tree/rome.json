@@ -1,0 +1,21 @@
+{
+  "formatter": {
+    "enabled": false
+  },
+  "linter": {
+    "ignore": ["src/ui/style/highlight.min.js"],
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noExplicitAny": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useValidAnchor": "off"
+      }
+    }
+  }
+}

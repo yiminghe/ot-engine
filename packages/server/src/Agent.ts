@@ -1,25 +1,25 @@
 import type { Duplex } from 'stream';
-import type { Server } from './Server';
 import {
-  OTType,
-  ClientResponse,
   ClientRequest,
+  ClientResponse,
   CommitOpRequest,
-  transformType,
-  Op,
-  RemoteOpResponse,
-  applyAndInvert,
-  OTError,
-  PresenceRequest,
-  Presence,
-  isSameOp,
-  Logger,
-  assertNever,
-  RollbackRequest,
   DeleteDocRequest,
   GetOpsRequest,
   GetSnapshotRequest,
+  Logger,
+  OTError,
+  OTType,
+  Op,
+  Presence,
+  PresenceRequest,
+  RemoteOpResponse,
+  RollbackRequest,
+  applyAndInvert,
+  assertNever,
+  isSameOp,
+  transformType,
 } from 'ot-engine-common';
+import type { Server } from './Server';
 import { PubSubData } from './types';
 
 export interface AgentConfig<S, P, Pr, Custom> {

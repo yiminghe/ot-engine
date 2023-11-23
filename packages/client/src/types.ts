@@ -1,5 +1,5 @@
-import { Event } from 'ts-event-target';
 import { Op, Presence } from 'ot-engine-common';
+import { Event } from 'ts-event-target';
 
 export class OpEvent<P> extends Event<'op'> {
   constructor(

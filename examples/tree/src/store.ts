@@ -1,6 +1,6 @@
 import { init } from '@rematch/core';
-import { models } from './models';
 import { doc } from './doc';
+import { models } from './models';
 
 export const store = init<any>({
   models,

@@ -1,15 +1,14 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import Quill from 'quill';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
 // @ts-ignore
 import QuillCursors from 'quill-cursors';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
+import 'quill/dist/quill.bubble.css';
 // @ts-ignore
 import tinycolor from 'tinycolor2';
 import { doc } from './doc';
 import './style.css';
-import 'quill/dist/quill.bubble.css';
 
 Quill.register('modules/cursors', QuillCursors);
 
@@ -93,7 +92,7 @@ function initialiseQuill(remotePresences: Map<string, any>) {
       cursors.createCursor(id, name, colors[id]);
       cursors.moveCursor(id, range);
     }
-    document.getElementById('count')!.innerHTML = doc.remotePresences.size + '';
+    document.getElementById('count')!.innerHTML = `${doc.remotePresences.size}`;
   }
 
   if (remotePresences.size) {

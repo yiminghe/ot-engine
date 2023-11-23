@@ -2,7 +2,8 @@ body {
   font-family: sans-serif;
 }
 
-input, button {
+input,
+button {
   font-size: 16px;
   margin-right: 10px;
 }

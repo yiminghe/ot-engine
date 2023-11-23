@@ -3,10 +3,10 @@ import express from 'express';
 import { Server } from 'ot-engine/server';
 import WebSocket from 'ws';
 import qs from 'qs';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
 // @ts-ignore
 import WebSocketJSONStream from '@teamwork/websocket-json-stream';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
 // @ts-ignore
 import { type } from 'rich-text';
 
@@ -34,7 +34,9 @@ function startServer() {
   const app = express();
   const server = http.createServer(app);
   const inited: Map<string, Promise<void>> = new Map();
-  if (build) { app.use(express.static('build')); }
+  if (build) {
+    app.use(express.static('build'));
+  }
   // Connect any incoming WebSocket
   const wss = new WebSocket.Server({ server: server });
   wss.on('connection', async function (ws, req) {

@@ -1,15 +1,15 @@
-import { DB } from './types';
 import {
-  Op,
+  CommitOpParams,
+  DeleteDocParams,
   GetOpsParams,
   GetSnapshotParams,
-  last,
-  CommitOpParams,
+  OTError,
+  Op,
   SaveSnapshotParams,
   Snapshot,
-  DeleteDocParams,
-  OTError,
+  last,
 } from 'ot-engine-common';
+import { DB } from './types';
 
 function checkDeleted(doc: DBDoc | undefined) {
   if (doc?.deleted) {
@@ -129,7 +129,7 @@ export class MemoryDB implements DB {
   async commitOp<P>(params: CommitOpParams<P>) {
     const { ops } = this.getOrCreateDoc(params);
     if (ops.has(params.op.version)) {
-      throw new Error('op version conflict: ' + params.op.version);
+      throw new Error(`op version conflict: ${params.op.version}`);
     }
     ops.set(params.op.version, params.op);
   }

@@ -1,6 +1,6 @@
 {
   "name": "ot-engine",
-  "version": "0.0.12",
+  "version": "0.0.0",
   "description": "Operational transformation engine",
   "author": "yiminghe <yiminghe@gmail.com>",
   "license": "MIT",
@@ -8,11 +8,37 @@
     "type": "git",
     "url": "git@github.com:yiminghe/ot-engine.git"
   },
+  "exports": {
+    "./client": {
+      "import": {
+        "types": "./client.d.ts",
+        "default": "./client.esm.js"
+      },
+      "require": {
+        "types": "./client.d.ts",
+        "default": "./client.js"
+      }
+    },
+    "./server": {
+      "import": {
+        "types": "./server.d.ts",
+        "default": "./server.esm.js"
+      },
+      "require": {
+        "types": "./server.d.ts",
+        "default": "./server.js"
+      }
+    }
+  },
+  "devDependencies": {
+    "fs-extra": "11.x"
+  },
   "dependencies": {
-    "ot-engine-client": "0.0.12",
-    "ot-engine-server": "0.0.11"
+    "ot-engine-client": "workspace:*",
+    "ot-engine-server": "workspace:*"
   },
   "scripts": {
-    "pub": "npm publish"
+    "build": "node scripts/build",
+    "pub": "npm run build && cd pkg && npm publish"
   }
 }

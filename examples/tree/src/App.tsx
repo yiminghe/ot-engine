@@ -1,22 +1,20 @@
 /* eslint-disable no-param-reassign */
 
+import { editOp, removeOp } from 'ot-tree';
 import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import SortableTree from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
+import { doc } from './doc';
 import {
-  transformLowerSiblingCountsToPath,
   stopPropagation,
+  transformLowerSiblingCountsToPath,
   transformToViewTree,
 } from './utils';
-import { useSelector, useDispatch } from 'react-redux';
-import { doc } from './doc';
-import { editOp, removeOp } from 'ot-tree';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 function noop() {}
 
 export function App() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, forceRender] = useState(0);
 
   // 获取 model
@@ -29,28 +27,28 @@ export function App() {
   return (
     <div style={{ padding: 10 }} onClick={stopPropagation}>
       <button
+        type="button"
         onClick={() => {
           dispatch.app.addNode([]);
-        }}
-      >
+        }}>
         Add Root
       </button>{' '}
       &nbsp;
       <button
+        type="button"
         disabled={!doc.canUndo()}
         onClick={() => {
           doc.undo();
-        }}
-      >
+        }}>
         Undo
       </button>{' '}
       &nbsp;
       <button
+        type="button"
         disabled={!doc.canRedo()}
         onClick={() => {
           doc.redo();
-        }}
-      >
+        }}>
         Redo
       </button>{' '}
       &nbsp;
@@ -62,7 +60,7 @@ export function App() {
           onMoveNode={(arg: any) => {
             dispatch.app.moveNode(arg);
             setTimeout(() => {
-              forceRender((s: number) => ++s);
+              forceRender((s: number) => s + 1);
             }, 100);
           }}
           onVisibilityToggle={(arg: any) => {
@@ -88,6 +86,7 @@ export function App() {
               </span>,
               <div style={{ width: 10 }} />,
               <button
+                type="button"
                 onClick={() => {
                   const path =
                     app.selectedId === node.data.id
@@ -102,12 +101,12 @@ export function App() {
                     selectedId:
                       app.selectedId === node.data.id ? '' : node.data.id,
                   });
-                }}
-              >
+                }}>
                 {app.selectedId === node.data.id ? 'unselect' : 'select'}
               </button>,
               <div style={{ width: 10 }} />,
               <button
+                type="button"
                 onClick={() => {
                   const name = window.prompt('名字') || '';
                   if (name) {
@@ -117,28 +116,27 @@ export function App() {
                     );
                     doc.submitOp(editOp(path, { name }));
                   }
-                }}
-              >
+                }}>
                 Rename
               </button>,
               <div style={{ width: 10 }} />,
               <button
+                type="button"
                 onClick={() => {
                   dispatch.app.addNode(lowerSiblingCounts);
-                }}
-              >
+                }}>
                 Add Child
               </button>,
               <div style={{ width: 10 }} />,
               <button
+                type="button"
                 onClick={() => {
                   const path = transformLowerSiblingCountsToPath(
                     lowerSiblingCounts,
                     model.treeData,
                   );
                   doc.submitOp(removeOp(path));
-                }}
-              >
+                }}>
                 Remove
               </button>,
             ],

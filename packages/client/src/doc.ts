@@ -1,36 +1,36 @@
 import {
-  ClientResponse,
   ClientRequest,
-  OTType,
-  Op,
+  ClientResponse,
   CommitOpResponse,
-  transformType,
-  last,
-  applyAndInvert,
   GetOpsResponse,
   GetSnapshotResponse,
-  Presence,
-  isSameOp,
   Logger,
-  assertNever,
   OTErrorSubType,
   OTErrorType,
+  OTType,
+  Op,
+  Presence,
+  applyAndInvert,
+  assertNever,
+  isSameOp,
+  last,
+  transformType,
 } from 'ot-engine-common';
 import { EventTarget } from 'ts-event-target';
-import { RemotePresenceManager } from './RemotePresence';
 import { LocalPresenceManager } from './LocalPresence';
+import { RemotePresenceManager } from './RemotePresence';
+import { UndoManager } from './UndoManager';
 import {
+  BeforeOpEvent,
+  ClientRollbackParams,
   NoPendingEvent,
   OpEvent,
   PendingOp,
+  RemoteDeleteDocEvent,
   RemoteOpEvent,
   RemotePresenceEvent,
-  RemoteDeleteDocEvent,
-  BeforeOpEvent,
   RollbackEvent,
-  ClientRollbackParams,
 } from './types';
-import { UndoManager } from './UndoManager';
 import { getUuid } from './utils';
 
 interface DocConfig<S, P, Pr> {
@@ -150,7 +150,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
 
   bindToSocket(socket: WebSocket) {
     if (this.socket) {
-      this.destryoy();
+      this.destroy();
     }
 
     this.socket = socket;
@@ -188,7 +188,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     this.pendingOps = [];
   }
 
-  destryoy() {
+  destroy() {
     const { socket } = this;
     socket.close();
     socket.onmessage = null;
@@ -353,7 +353,7 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
       invert: {
         clientId: this.clientId,
         version: 0,
-        id: '-' + op.id,
+        id: `-${op.id}`,
         content: invert,
       },
     };
@@ -369,8 +369,8 @@ export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
     }
     this.sending = true;
     while (this.pendingOps.length) {
-      const op = (this.inflightOp = this.inflightOp || this.pendingOps.shift()!)
-        .op;
+      this.inflightOp = this.inflightOp || this.pendingOps.shift()!;
+      const op = this.inflightOp.op;
       op.version = this.version;
       const res = (await this.send({
         type: 'commitOp',
