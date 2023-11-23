@@ -1,14 +1,14 @@
 import type { Op, Presence, Snapshot, SnapshotAndOps } from './core';
 
-type AgentInfo = {
+export type AgentInfo = {
   custom?: any;
   docId: string;
   collection: string;
 };
 
-type AgentInfoKeys = keyof AgentInfo;
+export type AgentInfoKeys = keyof AgentInfo;
 
-interface BaseRequest {
+export interface BaseRequest {
   seq: number;
 }
 
@@ -63,7 +63,7 @@ export type ClientRequest<P, Pr> =
   | GetOpsRequest
   | CommitOpRequest<P>;
 
-interface BaseResponse {
+export interface BaseResponse {
   seq: number;
   error?: any;
 }

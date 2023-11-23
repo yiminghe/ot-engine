@@ -33,7 +33,7 @@ import {
 } from './types';
 import { getUuid } from './utils';
 
-interface DocConfig<S, P, Pr> {
+export interface DocConfig<S, P, Pr> {
   clientId: string;
   socket: WebSocket;
   otType: OTType<S, P, Pr>;
@@ -47,7 +47,9 @@ function sleep(time: number) {
     setTimeout(resolve, time);
   });
 }
-
+/**
+ *@public
+ */
 export class Doc<S = unknown, P = unknown, Pr = unknown> extends EventTarget<
   [
     OpEvent<P>,

@@ -11,16 +11,16 @@ export interface ServerConfig {
   pubSub?: PubSub<any>;
 }
 
-type ServerConfig_ = Required<ServerConfig>;
+export type RequiredServerConfig = Required<ServerConfig>;
 
-interface PresenceMessage {
+export interface PresenceMessage {
   subscribeId: string;
   presence: Presence<any>;
   clientId: string;
 }
 
 export class Server {
-  config: ServerConfig_;
+  config: RequiredServerConfig;
 
   agentsMap: Map<string, Set<Agent<any, any, any, any>>> = new Map();
 

@@ -13,6 +13,7 @@ yarn-error.log*
 coverage
 
 
+temp/
 
 # Dependency directories
 node_modules/

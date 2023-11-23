@@ -9,6 +9,7 @@
     "url": "git@github.com:yiminghe/ot-engine.git"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "7.x",
     "code-config": "workspace:*",
     "@biomejs/biome": "1.0.0",
     "typescript": "5.x"
